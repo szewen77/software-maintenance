@@ -23,7 +23,8 @@ public class JdbcStockRepository implements StockRepository {
 
     @Override
     public List<StockItem> findByProductId(String productId) {
-        String sql = "SELECT * FROM stock WHERE product_id = ?";
+        // Use UPPER() for case-insensitive comparison
+        String sql = "SELECT * FROM stock WHERE UPPER(product_id) = UPPER(?)";
         List<StockItem> list = new ArrayList<>();
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -41,7 +42,8 @@ public class JdbcStockRepository implements StockRepository {
 
     @Override
     public int getQuantity(String productId, String size) {
-        String sql = "SELECT quantity FROM stock WHERE product_id = ? AND size = ?";
+        // Use UPPER() for case-insensitive comparison
+        String sql = "SELECT quantity FROM stock WHERE UPPER(product_id) = UPPER(?) AND UPPER(size) = UPPER(?)";
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, productId);
@@ -76,6 +78,9 @@ public class JdbcStockRepository implements StockRepository {
 
     @Override
     public void setQuantity(String productId, String size, int qty) {
+        // Normalize to uppercase before storing
+        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;
+        String normalizedSize = size != null ? size.toUpperCase().trim() : null;
         String sql = """
                 INSERT INTO stock(product_id,size,quantity)
                 VALUES(?,?,?)
@@ -83,13 +88,13 @@ public class JdbcStockRepository implements StockRepository {
                 """;
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, productId);
-            ps.setString(2, size);
+            ps.setString(1, normalizedProductId);
+            ps.setString(2, normalizedSize);
             ps.setInt(3, qty);
             ps.executeUpdate();
-            LOG.info("Set stock for {} size {} = {}", productId, size, qty);
+            LOG.info("Set stock for {} size {} = {}", normalizedProductId, normalizedSize, qty);
         } catch (SQLException e) {
-            LOG.error("Failed to set quantity for {} size {}", productId, size, e);
+            LOG.error("Failed to set quantity for {} size {}", normalizedProductId, normalizedSize, e);
         }
     }
 

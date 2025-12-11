@@ -21,26 +21,37 @@ public class InventoryService {
         if (requestedQty < 0) {
             return false;
         }
-        int available = stockRepository.getQuantity(productId, size);
+        // Normalize to uppercase for case-insensitive comparison
+        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;
+        String normalizedSize = size != null ? size.toUpperCase().trim() : null;
+        int available = stockRepository.getQuantity(normalizedProductId, normalizedSize);
         return available >= requestedQty;
     }
 
     public void reduceStock(String productId, String size, int qty) {
         ValidationUtils.validateQuantity(qty);
-        if (!isStockAvailable(productId, size, qty)) {
+        // Normalize to uppercase for case-insensitive comparison
+        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;
+        String normalizedSize = size != null ? size.toUpperCase().trim() : null;
+        if (!isStockAvailable(normalizedProductId, normalizedSize, qty)) {
             throw new InsufficientStockException("Insufficient stock for " + productId + " (" + size + ")");
         }
-        stockRepository.decreaseQuantity(productId, size, qty);
-        LOG.info("Reduced stock {} {} by {}", productId, size, qty);
+        stockRepository.decreaseQuantity(normalizedProductId, normalizedSize, qty);
+        LOG.info("Reduced stock {} {} by {}", normalizedProductId, normalizedSize, qty);
     }
 
     public void increaseStock(String productId, String size, int qty) {
         ValidationUtils.validateQuantity(qty);
-        stockRepository.increaseQuantity(productId, size, qty);
-        LOG.info("Increased stock {} {} by {}", productId, size, qty);
+        // Normalize to uppercase for case-insensitive comparison
+        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;
+        String normalizedSize = size != null ? size.toUpperCase().trim() : null;
+        stockRepository.increaseQuantity(normalizedProductId, normalizedSize, qty);
+        LOG.info("Increased stock {} {} by {}", normalizedProductId, normalizedSize, qty);
     }
 
     public List<StockItem> getStockForProduct(String productId) {
-        return stockRepository.findByProductId(productId);
+        // Normalize productId to uppercase for case-insensitive lookup
+        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;
+        return stockRepository.findByProductId(normalizedProductId);
     }
 }

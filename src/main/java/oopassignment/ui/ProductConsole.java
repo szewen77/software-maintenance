@@ -238,31 +238,80 @@ public class ProductConsole {
             return;
         }
     
-        String border   = "+----------+----------------------+------------+------------+--------+";
-        String headerFm = "| %-8s | %-20s | %-10s | %-10s | %-6s |%n";
-        String rowFm    = "| %-8s | %-20s | %10.2f | %-10s | %6d |%n";
-    
         System.out.println();
-        System.out.println("Products");
-        System.out.println(border);
-        System.out.printf(headerFm, "ID", "Name", "Price", "Category", "Stock");
-        System.out.println(border);
+        System.out.println(ANSI_CYAN + "Products & Stock Details" + ANSI_BLACK);
+        System.out.println();
     
+        // Single table for all products
+        String border = "+----------+----------------------+------------+------------+--------+----------+";
+        String headerFm = "| %-8s | %-20s | %-10s | %-10s | %-6s | %-8s |%n";
+        String rowFm = "| %-8s | %-20s | %10.2f | %-10s | %-6s | %8d |%n";
+        String emptyRowFm = "| %-8s | %-20s | %10s | %-10s | %-6s | %8d |%n";
+        
+        System.out.println(border);
+        System.out.printf(headerFm, "ID", "Name", "Price", "Category", "Size", "Quantity");
+        System.out.println(border);
+        
         for (ProductRecord p : products) {
-            int totalQty = inventoryService.getStockForProduct(p.getProductId())
-                    .stream()
-                    .mapToInt(StockItem::getQuantity)
-                    .sum();
-            System.out.printf(
-                rowFm,
-                p.getProductId(),
-                p.getName(),
-                p.getPrice(),
-                p.getCategory(),
-                totalQty
-            );
+            List<StockItem> stockItems = inventoryService.getStockForProduct(p.getProductId());
+            
+            // Sort sizes for better readability
+            List<StockItem> sortedStock = new ArrayList<>(stockItems);
+            sortedStock.sort((a, b) -> {
+                String sizeA = a.getSize();
+                String sizeB = b.getSize();
+                int indexA = CLOTHES_SIZES.indexOf(sizeA);
+                int indexB = CLOTHES_SIZES.indexOf(sizeB);
+                if (indexA != -1 && indexB != -1) {
+                    return Integer.compare(indexA, indexB);
+                }
+                if (indexA != -1) return -1;
+                if (indexB != -1) return 1;
+                indexA = SHOE_SIZES.indexOf(sizeA);
+                indexB = SHOE_SIZES.indexOf(sizeB);
+                if (indexA != -1 && indexB != -1) {
+                    return Integer.compare(indexA, indexB);
+                }
+                return sizeA.compareTo(sizeB);
+            });
+            
+            if (sortedStock.isEmpty()) {
+                // Product with no stock - show product info with N/A for size and 0 for quantity
+                System.out.printf(rowFm, 
+                    p.getProductId(), 
+                    p.getName(), 
+                    p.getPrice(), 
+                    p.getCategory(),
+                    "N/A",
+                    0
+                );
+            } else {
+                // First row: show product info with first size
+                StockItem firstStock = sortedStock.get(0);
+                System.out.printf(rowFm, 
+                    p.getProductId(), 
+                    p.getName(), 
+                    p.getPrice(), 
+                    p.getCategory(),
+                    firstStock.getSize(),
+                    firstStock.getQuantity()
+                );
+                
+                // Subsequent rows: show only sizes (empty product info columns)
+                for (int i = 1; i < sortedStock.size(); i++) {
+                    StockItem stock = sortedStock.get(i);
+                    System.out.printf(emptyRowFm, 
+                        "",  // Empty ID
+                        "",  // Empty Name
+                        "",  // Empty Price
+                        "",  // Empty Category
+                        stock.getSize(),
+                        stock.getQuantity()
+                    );
+                }
+            }
         }
-    
+        
         System.out.println(border);
     }
 

@@ -29,9 +29,11 @@ public class InMemoryStockRepository implements StockRepository {
 
     @Override
     public List<StockItem> findByProductId(String productId) {
+        // Normalize to uppercase for case-insensitive comparison
+        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;
         List<StockItem> items = new ArrayList<>();
         for (StockItem item : stock.values()) {
-            if (item.getProductId().equals(productId)) {
+            if (item.getProductId().toUpperCase().equals(normalizedProductId)) {
                 items.add(item);
             }
         }
@@ -40,7 +42,10 @@ public class InMemoryStockRepository implements StockRepository {
 
     @Override
     public int getQuantity(String productId, String size) {
-        return stock.getOrDefault(key(productId, size), new StockItem(productId, size, 0)).getQuantity();
+        // Normalize to uppercase for case-insensitive comparison
+        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;
+        String normalizedSize = size != null ? size.toUpperCase().trim() : null;
+        return stock.getOrDefault(key(normalizedProductId, normalizedSize), new StockItem(normalizedProductId, normalizedSize, 0)).getQuantity();
     }
 
     @Override
@@ -57,7 +62,10 @@ public class InMemoryStockRepository implements StockRepository {
         if (qty < 0) {
             throw new IllegalArgumentException("Quantity cannot be negative");
         }
-        stock.put(key(productId, size), new StockItem(productId, size, qty));
+        // Normalize to uppercase before storing
+        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;
+        String normalizedSize = size != null ? size.toUpperCase().trim() : null;
+        stock.put(key(normalizedProductId, normalizedSize), new StockItem(normalizedProductId, normalizedSize, qty));
     }
 
     @Override

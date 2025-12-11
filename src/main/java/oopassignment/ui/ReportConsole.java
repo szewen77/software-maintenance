@@ -1,8 +1,11 @@
 package oopassignment.ui;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import oopassignment.domain.order.TransactionHeader;
 import oopassignment.domain.auth.EmployeeRecord;
 import oopassignment.domain.auth.Role;
 import oopassignment.domain.report.MemberPurchase;
@@ -19,6 +22,7 @@ public class ReportConsole {
 
     private static final ReportService reportService = ApplicationContext.REPORT_SERVICE;
     private static final EmployeeService employeeService = ApplicationContext.EMPLOYEE_SERVICE;
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public static void showMenu() {
         int opt = 0;
@@ -161,11 +165,13 @@ public class ReportConsole {
         System.out.println(border);
     
         for (MemberPurchase p : purchases) {
+            String formattedDateTime = p.getDateTime().format(DATETIME_FORMATTER);
             System.out.printf(
                 rowFm,
-                p.getDateTime(),
+                formattedDateTime,
                 p.getAmount(),
-                "N/A"
+                p.getPaymentMethod()
+                //"N/A"
             );
         }
     
@@ -180,31 +186,70 @@ public class ReportConsole {
             System.out.println(ANSI_RED + "End date must not be earlier than start date." + ANSI_BLACK);
             return;
         }
+        
+        List<TransactionHeader> transactions;
         SalesSummary summary;
         try {
+            transactions = reportService.getTransactionsInRange(from, to);
             summary = reportService.getSalesSummary(from, to);
         } catch (Exception ex) {
             System.out.println(ANSI_RED + ex.getMessage() + ANSI_BLACK);
             return;
         }
     
-        String border = "+----------------------+------------+------------+------------+";
-        String headerFm = "| %-20s | %-10s | %-10s | %-10s |%n";
-        String rowFm    = "| %-20s | %10.2f | %10d | %10.2f |%n";
+        if (transactions.isEmpty()) {
+            System.out.println(ANSI_YELLOW + "\nNo transactions found for the selected date range." + ANSI_BLACK);
+            return;
+        }
+    
+        // Display detailed transaction list
+        String border = "+------------+---------------------+------------+------------+------------+------------+";
+        String headerFm = "| %-10s | %-19s | %-10s | %-10s | %-10s | %10s |%n";
+        String rowFm    = "| %-10s | %-19s | %-10s | %-10s | %-10s | %10.2f |%n";
     
         System.out.println();
-        System.out.println("Sales summary");
+        System.out.println(ANSI_CYAN + "Sales Summary: " + from + " to " + to + ANSI_BLACK);
+        System.out.println();
+        System.out.println("Transaction Details:");
         System.out.println(border);
-        System.out.printf(headerFm, "Period", "Total", "Count", "Avg");
+        System.out.printf(headerFm, "Trans ID", "DateTime", "Member ID", "Customer ID", "Payment", "Amount");
         System.out.println(border);
+    
+        for (TransactionHeader t : transactions) {
+            String formattedDateTime = t.getDateTime().format(DATETIME_FORMATTER);
+            String memberId = t.getMemberId() != null && !t.getMemberId().isBlank() ? t.getMemberId() : "N/A";
+            String customerId = t.getCustomerId() != null && !t.getCustomerId().isBlank() ? t.getCustomerId() : "N/A";
+            String paymentMethod = t.getPaymentMethod() != null && !t.getPaymentMethod().isBlank() ? t.getPaymentMethod() : "N/A";
+            System.out.printf(
+                rowFm,
+                t.getTransactionId(),
+                formattedDateTime,
+                memberId,
+                customerId,
+                paymentMethod,
+                t.getTotalAmount()
+            );
+        }
+        System.out.println(border);
+        
+        // Display summary section
+        System.out.println();
+        System.out.println(ANSI_CYAN + "Summary:" + ANSI_BLACK);
+        String summaryBorder = "+--------------------------------+------------+------------+------------+";
+        String summaryHeaderFm = "| %-30s | %-10s | %-10s | %-10s |%n";
+        String summaryRowFm    = "| %-30s | %10.2f | %10d | %10.2f |%n";
+        
+        System.out.println(summaryBorder);
+        System.out.printf(summaryHeaderFm, "Period", "Total", "Count", "Avg");
+        System.out.println(summaryBorder);
         System.out.printf(
-            rowFm,
+            summaryRowFm,
             from + " to " + to,
             summary.getTotalAmount(),
             summary.getTransactionCount(),
             summary.getAveragePerTransaction()
         );
-        System.out.println(border);
+        System.out.println(summaryBorder);
     }
     
 

@@ -46,4 +46,15 @@ public class ReportService {
         }
         return purchases;
     }
+
+    public List<TransactionHeader> getTransactionsInRange(LocalDate from, LocalDate to) {
+        List<TransactionHeader> transactions = new ArrayList<>();
+        for (TransactionHeader header : transactionRepository.findAllHeaders()) {
+            LocalDate date = header.getDateTime().toLocalDate();
+            if ((from == null || !date.isBefore(from)) && (to == null || !date.isAfter(to))) {
+                transactions.add(header);
+            }
+        }
+        return transactions;
+    }
 }

@@ -36,14 +36,76 @@ public class OrderConsole {
             System.out.println("No products available to order.");
             return;
         }
-        System.out.println("Available products:");
+        
+        // Display products in a table format with stock by size
+        String border = "+----------+----------------------+------------+------------+--------+----------+";
+        String headerFm = "| %-8s | %-20s | %-10s | %-10s | %-6s | %-8s |%n";
+        String rowFm = "| %-8s | %-20s | %10.2f | %-10s | %-6s | %8d |%n";
+        String emptyRowFm = "| %-8s | %-20s | %10s | %-10s | %-6s | %8d |%n";
+        
+        System.out.println();
+        System.out.println(ANSI_CYAN + "Available Products" + ANSI_BLACK);
+        System.out.println(border);
+        System.out.printf(headerFm, "ID", "Name", "Price", "Category", "Size", "Stock");
+        System.out.println(border);
+        
         for (ProductRecord p : products) {
-            int totalQty = inventoryService.getStockForProduct(p.getProductId()).stream()
-                    .mapToInt(StockItem::getQuantity)
-                    .sum();
-            System.out.printf("%s - %s (%s) RM%.2f | Stock: %d%n",
-                    p.getProductId(), p.getName(), p.getCategory(), p.getPrice(), totalQty);
+            List<StockItem> stockItems = inventoryService.getStockForProduct(p.getProductId());
+            
+            // Sort sizes for better readability
+            List<StockItem> sortedStock = new ArrayList<>(stockItems);
+            sortedStock.sort((a, b) -> {
+                String sizeA = a.getSize();
+                String sizeB = b.getSize();
+                // Try to sort numerically for shoe sizes, alphabetically for clothes
+                try {
+                    int numA = Integer.parseInt(sizeA);
+                    int numB = Integer.parseInt(sizeB);
+                    return Integer.compare(numA, numB);
+                } catch (NumberFormatException e) {
+                    return sizeA.compareTo(sizeB);
+                }
+            });
+            
+            if (sortedStock.isEmpty()) {
+                // Product with no stock - show product info with N/A
+                System.out.printf(rowFm, 
+                    p.getProductId(), 
+                    p.getName(), 
+                    p.getPrice(), 
+                    p.getCategory(),
+                    "N/A",
+                    0
+                );
+            } else {
+                // First row: show product info with first size
+                StockItem firstStock = sortedStock.get(0);
+                System.out.printf(rowFm, 
+                    p.getProductId(), 
+                    p.getName(), 
+                    p.getPrice(), 
+                    p.getCategory(),
+                    firstStock.getSize(),
+                    firstStock.getQuantity()
+                );
+                
+                // Subsequent rows: show only sizes (empty product info columns)
+                for (int i = 1; i < sortedStock.size(); i++) {
+                    StockItem stock = sortedStock.get(i);
+                    System.out.printf(emptyRowFm, 
+                        "",  // Empty ID
+                        "",  // Empty Name
+                        "",  // Empty Price
+                        "",  // Empty Category
+                        stock.getSize(),
+                        stock.getQuantity()
+                    );
+                }
+            }
         }
+        
+        System.out.println(border);
+        System.out.println();
 
         // Validate member ID if provided
         String memberId = null;
@@ -71,16 +133,21 @@ public class OrderConsole {
         boolean more;
         do {
             String productId = readRequiredLine("Enter product id: ");
-            if (productService.findById(productId).isEmpty()) {
+            // Normalize productId to uppercase (ProductService already does this, but normalize here too)
+            String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;
+            if (productService.findById(normalizedProductId).isEmpty()) {
                 System.out.println(ANSI_RED + "Product not found." + ANSI_BLACK);
             } else {
                 String size = readRequiredLine("Enter size: ");
+                // Normalize size to uppercase for case-insensitive comparison
+                String normalizedSize = size != null ? size.toUpperCase().trim() : null;
                 int qty = readPositiveInt("Enter quantity: ");
 
-                if (!inventoryService.isStockAvailable(productId, size, qty)) {
-                    System.out.println(ANSI_RED + "Not enough stock for " + productId + " size " + size + ANSI_BLACK);
+                if (!inventoryService.isStockAvailable(normalizedProductId, normalizedSize, qty)) {
+                    System.out.println(ANSI_RED + "Not enough stock for " + normalizedProductId + " size " + normalizedSize + ANSI_BLACK);
                 } else {
-                    items.add(new OrderItemRequest(productId, size, qty));
+                    // Use normalized values for the order
+                    items.add(new OrderItemRequest(normalizedProductId, normalizedSize, qty));
                 }
             }
             more = readYesNo("Add another item? (Y/N): ");

@@ -27,7 +27,29 @@ public class BootsDo {
 
     public static void main(String[] args) throws IOException {
         BootsDotDo_Logo();
-        LoginConsole.login();
+        startApplication();
+    }
+    
+    public static void startApplication() throws IOException {
+        while (true) {
+            System.out.println("\n" + ANSI_CYAN + "=== BOOTS.DO SYSTEM ===" + RESET);
+            System.out.println("1. Login");
+            System.out.println("2. Exit System");
+            int choice = readIntInRange("\nOption > ", 1, 2);
+            
+            if (choice == 1) {
+                clearJavaConsoleScreen();
+                BootsDotDo_Logo();
+                // login() returns true if user logged out or chose not to retry
+                // This will bring them back to the initial menu
+                LoginConsole.login();
+                clearJavaConsoleScreen();
+                BootsDotDo_Logo();
+            } else if (choice == 2) {
+                System.out.println(ANSI_GREEN + "\nThank you for using Boots.Do. Goodbye!" + RESET);
+                System.exit(0);
+            }
+        }
     }
 
     public static void BootsDotDo_Logo(){

@@ -15,12 +15,7 @@ import oopassignment.domain.auth.EmployeeRecord;
 import oopassignment.domain.auth.Role;
 import oopassignment.util.ApplicationContext;
 
-import static oopassignment.ui.BootsDo.ANSI_BLACK;
-import static oopassignment.ui.BootsDo.ANSI_RED;
-import static oopassignment.ui.BootsDo.clearJavaConsoleScreen;
-import static oopassignment.ui.BootsDo.readIntInRange;
-import static oopassignment.ui.BootsDo.readRequiredLine;
-import static oopassignment.ui.BootsDo.readYesNo;
+import static oopassignment.ui.BootsDo.*;
 
 public class LoginConsole {
 
@@ -37,7 +32,7 @@ public class LoginConsole {
     }
     
 
-    public static void login() {
+    public static boolean login() {
         while (true) {
             System.out.println("\nLOGIN");
             String username = readRequiredLine("Username : ");
@@ -52,12 +47,10 @@ public class LoginConsole {
                 System.out.printf("\nHi, %s \n", Cashier);
                 boolean logout = Menu();
                 if (logout) {
-                    currentUser = null;
-                    Cashier = null;
-                    clearJavaConsoleScreen();
-                    continue;
+                    // User logged out, return to initial menu
+                    return true;
                 }
-                return;
+                return false;
             }
 
             System.out.println(ANSI_RED + result.getMessage() + ANSI_BLACK);
@@ -65,7 +58,8 @@ public class LoginConsole {
                 continue;
             }
             if (!promptRetry()) {
-                break;
+                // User chose not to retry, return to initial menu
+                return true;
             }
         }
     }
@@ -163,6 +157,7 @@ public class LoginConsole {
         Cashier = null;
         check = 0;
         clearJavaConsoleScreen();
-        System.exit(0);
+        System.out.println(ANSI_GREEN + "You have been logged out successfully." + ANSI_BLACK);
+        // Return to login screen (handled by Menu() returning true)
     }
 }
