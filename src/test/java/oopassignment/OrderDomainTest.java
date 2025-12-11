@@ -189,5 +189,89 @@ public class OrderDomainTest {
         assertTrue(result.getDiscount() >= 0);
         assertTrue(result.getTotal() > 0);
     }
+
+    @Test
+    public void orderRequestWithNullItems() {
+        // Test line 15: items == null ? new ArrayList<>() : new ArrayList<>(items)
+        OrderRequest request = new OrderRequest("MB007", "CU009", null, "CASH");
+        
+        assertNotNull("Items should not be null", request.getItems());
+        assertTrue("Items should be empty list", request.getItems().isEmpty());
+        assertEquals(0, request.getItems().size());
+    }
+
+    @Test
+    public void orderRequestWithNullPaymentMethod() {
+        // Test line 16: paymentMethod == null ? "CASH" : paymentMethod
+        List<OrderItemRequest> items = List.of(new OrderItemRequest("P001", "M", 1));
+        OrderRequest request = new OrderRequest("MB008", "CU010", items, null);
+        
+        assertEquals("CASH", request.getPaymentMethod());
+    }
+
+    @Test
+    public void orderRequestItemsAreImmutable() {
+        // Test line 28: return new ArrayList<>(items) - ensures defensive copy
+        List<OrderItemRequest> items = new ArrayList<>();
+        items.add(new OrderItemRequest("P001", "M", 1));
+        
+        OrderRequest request = new OrderRequest("MB009", "CU011", items, "CASH");
+        List<OrderItemRequest> returnedItems = request.getItems();
+        
+        // Modify the returned list
+        returnedItems.add(new OrderItemRequest("P002", "L", 5));
+        
+        // Original should not be affected
+        assertEquals(1, request.getItems().size());
+    }
+
+    @Test
+    public void orderRequestWithNullItemsAndPaymentMethod() {
+        // Test both null branches together
+        OrderRequest request = new OrderRequest("MB010", "CU012", null, null);
+        
+        assertNotNull(request.getItems());
+        assertTrue(request.getItems().isEmpty());
+        assertEquals("CASH", request.getPaymentMethod());
+    }
+
+    @Test
+    public void orderRequestWithEmptyItemsList() {
+        List<OrderItemRequest> emptyItems = new ArrayList<>();
+        OrderRequest request = new OrderRequest("MB011", "CU013", emptyItems, "CARD");
+        
+        assertEquals(0, request.getItems().size());
+        assertTrue(request.getItems().isEmpty());
+    }
+
+    @Test
+    public void orderItemRequestAllGetters() {
+        OrderItemRequest item = new OrderItemRequest("PROD123", "XL", 99);
+        
+        assertEquals("PROD123", item.getProductId());
+        assertEquals("XL", item.getSize());
+        assertEquals(99, item.getQuantity());
+    }
+
+    @Test
+    public void orderResultWithNoDiscount() {
+        OrderResult result = new OrderResult("T008", 100.0, 0.0, 100.0, false);
+        
+        assertEquals(100.0, result.getSubtotal(), 0.001);
+        assertEquals(0.0, result.getDiscount(), 0.001);
+        assertEquals(100.0, result.getTotal(), 0.001);
+        assertFalse(result.isMemberDiscountApplied());
+        assertNotNull("Transaction ID should be set", result.getTransactionId());
+    }
+
+    @Test
+    public void orderResultWithDiscountApplied() {
+        OrderResult result = new OrderResult("T009", 50.0, 2.5, 47.5, true);
+        
+        assertEquals(50.0, result.getSubtotal(), 0.001);
+        assertEquals(2.5, result.getDiscount(), 0.001);
+        assertEquals(47.5, result.getTotal(), 0.001);
+        assertTrue(result.isMemberDiscountApplied());
+    }
 }
 

@@ -168,6 +168,60 @@ public class DomainRecordsTest {
     }
 
     @Test
+    public void productRecordSetName() {
+        ProductRecord product = new ProductRecord("P003", "Old Name", "clothes", 
+                20.0, ProductStatus.ACTIVE);
+        
+        product.setName("New Name");
+        assertEquals("New Name", product.getName());
+    }
+
+    @Test
+    public void productRecordSetCategory() {
+        ProductRecord product = new ProductRecord("P004", "Sneakers", "shoes", 
+                100.0, ProductStatus.ACTIVE);
+        
+        product.setCategory("sports");
+        assertEquals("sports", product.getCategory());
+    }
+
+    @Test
+    public void productRecordSetPrice() {
+        ProductRecord product = new ProductRecord("P005", "Jacket", "clothes", 
+                50.0, ProductStatus.ACTIVE);
+        
+        product.setPrice(75.50);
+        assertEquals(75.50, product.getPrice(), 0.001);
+    }
+
+    @Test
+    public void productRecordSetStatus() {
+        ProductRecord product = new ProductRecord("P006", "Boots", "shoes", 
+                150.0, ProductStatus.ACTIVE);
+        
+        product.setStatus(ProductStatus.INACTIVE);
+        assertEquals(ProductStatus.INACTIVE, product.getStatus());
+    }
+
+    @Test
+    public void productRecordAllSettersIndividually() {
+        ProductRecord product = new ProductRecord("P007", "Original", "original", 
+                100.0, ProductStatus.ACTIVE);
+        
+        product.setName("Updated Name");
+        assertEquals("Updated Name", product.getName());
+        
+        product.setCategory("Updated Category");
+        assertEquals("Updated Category", product.getCategory());
+        
+        product.setPrice(200.0);
+        assertEquals(200.0, product.getPrice(), 0.001);
+        
+        product.setStatus(ProductStatus.INACTIVE);
+        assertEquals(ProductStatus.INACTIVE, product.getStatus());
+    }
+
+    @Test
     public void stockItemCreation() {
         StockItem stock = new StockItem("P001", "M", 10);
         
@@ -182,6 +236,38 @@ public class DomainRecordsTest {
         stock.setQuantity(8);
         
         assertEquals(8, stock.getQuantity());
+    }
+
+    @Test
+    public void stockItemSetQuantityMultipleTimes() {
+        StockItem stock = new StockItem("P003", "XL", 10);
+        
+        stock.setQuantity(20);
+        assertEquals(20, stock.getQuantity());
+        
+        stock.setQuantity(5);
+        assertEquals(5, stock.getQuantity());
+        
+        stock.setQuantity(100);
+        assertEquals(100, stock.getQuantity());
+    }
+
+    @Test
+    public void stockItemAllGetters() {
+        StockItem stock = new StockItem("PROD999", "42", 77);
+        
+        assertEquals("PROD999", stock.getProductId());
+        assertEquals("42", stock.getSize());
+        assertEquals(77, stock.getQuantity());
+    }
+
+    @Test
+    public void stockItemWithZeroQuantity() {
+        StockItem stock = new StockItem("P004", "S", 0);
+        assertEquals(0, stock.getQuantity());
+        
+        stock.setQuantity(10);
+        assertEquals(10, stock.getQuantity());
     }
 
     @Test
