@@ -1,9 +1,29 @@
-# IntelliJ IDEA project files
+### IntelliJ IDEA ###
 .idea/
 *.iml
+*.ipr
+*.iws
 
-# Build output
-/out/
+# IntelliJ build output
+out/
+out/production/
+out/test/
 
-# OS metadata
+### Java ###
+*.class
+*.log
+
+### OS Files ###
 .DS_Store
+Thumbs.db
+
+### Build Tools ###
+target/
+build/
+bin/
+
+### Temp ###
+*.tmp
+*.temp
+*.swp
+*.swo
