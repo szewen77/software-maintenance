@@ -4,17 +4,22 @@ import java.util.List;
 import oopassignment.domain.order.OrderItemRequest;
 import oopassignment.domain.order.OrderRequest;
 import oopassignment.domain.order.OrderResult;
+import oopassignment.domain.member.MemberRecord;
 import oopassignment.exception.InsufficientStockException;
 import oopassignment.exception.InvalidInputException;
+import oopassignment.exception.EntityNotFoundException;
 import oopassignment.repository.ProductRepository;
 import oopassignment.repository.StockRepository;
 import oopassignment.repository.TransactionRepository;
+import oopassignment.repository.MemberRepository;
 import oopassignment.repository.impl.InMemoryProductRepository;
 import oopassignment.repository.impl.InMemoryStockRepository;
 import oopassignment.repository.impl.InMemoryTransactionRepository;
+import oopassignment.repository.impl.InMemoryMemberRepository;
 import oopassignment.service.InventoryService;
 import oopassignment.service.OrderService;
 import oopassignment.service.PricingService;
+import oopassignment.service.MemberService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,6 +32,8 @@ public class OrderServiceTest {
 
     private OrderService orderService;
     private PricingService pricingService;
+    private MemberService memberService;
+    private MemberRepository memberRepository;
 
     @Before
     public void setUp() {
@@ -35,7 +42,9 @@ public class OrderServiceTest {
         InventoryService inventoryService = new InventoryService(stockRepository);
         pricingService = new PricingService();
         TransactionRepository transactionRepository = new InMemoryTransactionRepository();
-        orderService = new OrderService(productRepository, inventoryService, pricingService, transactionRepository);
+        memberRepository = new InMemoryMemberRepository();
+        memberService = new MemberService(memberRepository);
+        orderService = new OrderService(productRepository, inventoryService, pricingService, transactionRepository, memberRepository);
     }
 
     @Test
@@ -88,5 +97,64 @@ public class OrderServiceTest {
         assertThrows("Empty orders should be rejected",
                 InvalidInputException.class,
                 () -> orderService.placeOrder(empty));
+    }
+
+    @Test
+    public void walletPaymentDeductsBalance() {
+        MemberRecord member = memberService.registerMember("Wallet User", "950101-01-1234", 100.0);
+        OrderItemRequest item = new OrderItemRequest("P001", "M", 1);
+        OrderRequest request = new OrderRequest(member.getMemberId(), "CU-WALLET", List.of(item), "WALLET");
+        
+        OrderResult result = orderService.placeOrder(request);
+        
+        assertTrue("Member discount should apply", result.isMemberDiscountApplied());
+        MemberRecord updated = memberService.findById(member.getMemberId()).orElseThrow();
+        double expectedBalance = 100.0 - result.getTotal();
+        assertEquals("Wallet balance should be deducted", expectedBalance, updated.getCreditBalance(), 0.0001);
+    }
+
+    @Test
+    public void walletPaymentWithInsufficientBalanceThrows() {
+        MemberRecord member = memberService.registerMember("Poor User", "960202-02-5678", 5.0);
+        OrderItemRequest item = new OrderItemRequest("P001", "M", 1);
+        OrderRequest request = new OrderRequest(member.getMemberId(), "CU-WALLET", List.of(item), "WALLET");
+        
+        assertThrows("Should reject wallet payment with insufficient balance",
+                InvalidInputException.class,
+                () -> orderService.placeOrder(request));
+    }
+
+    @Test
+    public void walletPaymentForNonMemberThrows() {
+        OrderItemRequest item = new OrderItemRequest("P001", "M", 1);
+        OrderRequest request = new OrderRequest(null, "CU-NOMEMBER", List.of(item), "WALLET");
+        
+        assertThrows("Should reject wallet payment for non-members",
+                InvalidInputException.class,
+                () -> orderService.placeOrder(request));
+    }
+
+    @Test
+    public void walletPaymentWithInvalidMemberThrows() {
+        OrderItemRequest item = new OrderItemRequest("P001", "M", 1);
+        OrderRequest request = new OrderRequest("MB999", "CU-INVALID", List.of(item), "WALLET");
+        
+        assertThrows("Should reject wallet payment with invalid member",
+                EntityNotFoundException.class,
+                () -> orderService.placeOrder(request));
+    }
+
+    @Test
+    public void walletPaymentWithMultipleItems() {
+        MemberRecord member = memberService.registerMember("Big Spender", "970303-03-9876", 200.0);
+        OrderItemRequest item1 = new OrderItemRequest("P001", "M", 2);
+        OrderItemRequest item2 = new OrderItemRequest("P002", "42", 1);
+        OrderRequest request = new OrderRequest(member.getMemberId(), "CU-BIG", List.of(item1, item2), "WALLET");
+        
+        OrderResult result = orderService.placeOrder(request);
+        
+        MemberRecord updated = memberService.findById(member.getMemberId()).orElseThrow();
+        double expectedBalance = 200.0 - result.getTotal();
+        assertEquals("Wallet should handle multiple items", expectedBalance, updated.getCreditBalance(), 0.01);
     }
 }

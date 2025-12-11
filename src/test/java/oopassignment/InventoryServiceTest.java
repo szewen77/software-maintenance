@@ -59,4 +59,80 @@ public class InventoryServiceTest {
         inventoryService.increaseStock("P001", "M", 5);
         assertTrue("Increased stock should allow larger orders", inventoryService.isStockAvailable("P001", "M", 14));
     }
+
+    @Test
+    public void increaseStockWithZeroQuantityThrows() {
+        assertThrows("Zero increase should be rejected",
+                InvalidInputException.class,
+                () -> inventoryService.increaseStock("P001", "M", 0));
+    }
+
+    @Test
+    public void increaseStockWithNegativeQuantityThrows() {
+        assertThrows("Negative increase should be rejected",
+                InvalidInputException.class,
+                () -> inventoryService.increaseStock("P001", "M", -5));
+    }
+
+    @Test
+    public void getStockForProductReturnsItems() {
+        var stockItems = inventoryService.getStockForProduct("P001");
+        assertFalse("Should return stock items for existing product", stockItems.isEmpty());
+    }
+
+    @Test
+    public void getStockForNonExistentProductReturnsEmpty() {
+        var stockItems = inventoryService.getStockForProduct("P999");
+        assertTrue("Should return empty list for non-existent product", stockItems.isEmpty());
+    }
+
+    @Test
+    public void multipleReductionsUpdateStock() {
+        inventoryService.reduceStock("P001", "M", 1);
+        inventoryService.reduceStock("P001", "M", 1);
+        inventoryService.reduceStock("P001", "M", 1);
+        
+        assertTrue("Should still have stock after multiple reductions", 
+                inventoryService.isStockAvailable("P001", "M", 5));
+    }
+
+    @Test
+    public void differentSizesTrackedSeparately() {
+        boolean sizeM = inventoryService.isStockAvailable("P001", "M", 5);
+        boolean sizeL = inventoryService.isStockAvailable("P001", "L", 5);
+        
+        assertTrue("Size M should be available", sizeM);
+        assertTrue("Size L should be available", sizeL);
+    }
+
+    @Test
+    public void reduceStockAcrossDifferentSizes() {
+        inventoryService.reduceStock("P001", "M", 2);
+        inventoryService.reduceStock("P001", "L", 3);
+        
+        assertTrue("Size M should still have stock", inventoryService.isStockAvailable("P001", "M", 5));
+        assertTrue("Size L should still have stock", inventoryService.isStockAvailable("P001", "L", 5));
+    }
+
+    @Test
+    public void exactStockAmountIsAvailable() {
+        int totalStock = inventoryService.getStockForProduct("P001").stream()
+                .filter(s -> "M".equals(s.getSize()))
+                .mapToInt(s -> s.getQuantity())
+                .sum();
+        
+        assertTrue("Exact stock amount should be available", 
+                inventoryService.isStockAvailable("P001", "M", totalStock));
+    }
+
+    @Test
+    public void oneMoreThanStockIsNotAvailable() {
+        int totalStock = inventoryService.getStockForProduct("P001").stream()
+                .filter(s -> "M".equals(s.getSize()))
+                .mapToInt(s -> s.getQuantity())
+                .sum();
+        
+        assertFalse("One more than stock should not be available", 
+                inventoryService.isStockAvailable("P001", "M", totalStock + 1));
+    }
 }
