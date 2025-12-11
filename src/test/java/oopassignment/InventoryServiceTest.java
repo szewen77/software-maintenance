@@ -1,6 +1,7 @@
 package oopassignment;
 
 import oopassignment.exception.InsufficientStockException;
+import oopassignment.exception.InvalidInputException;
 import oopassignment.repository.StockRepository;
 import oopassignment.repository.impl.InMemoryStockRepository;
 import oopassignment.service.InventoryService;
@@ -39,5 +40,23 @@ public class InventoryServiceTest {
         assertThrows("Should reject reducing more than available",
                 InsufficientStockException.class,
                 () -> inventoryService.reduceStock("P001", "M", 100));
+    }
+
+    @Test
+    public void negativeRequestedQuantityIsNotAvailable() {
+        assertFalse("Negative quantity should not be allowed", inventoryService.isStockAvailable("P001", "M", -1));
+    }
+
+    @Test
+    public void zeroOrNegativeReductionsAreInvalid() {
+        assertThrows("Zero reductions should be rejected",
+                InvalidInputException.class,
+                () -> inventoryService.reduceStock("P001", "M", 0));
+    }
+
+    @Test
+    public void increaseStockRaisesAvailableQuantity() {
+        inventoryService.increaseStock("P001", "M", 5);
+        assertTrue("Increased stock should allow larger orders", inventoryService.isStockAvailable("P001", "M", 14));
     }
 }
