@@ -50,7 +50,7 @@ public final class ApplicationContext {
 
     public static final TransactionRepository TRANSACTION_REPOSITORY = chooseTransactionRepository();
     public static final PricingService PRICING_SERVICE = new PricingService();
-    public static final OrderService ORDER_SERVICE = new OrderService(PRODUCT_REPOSITORY, INVENTORY_SERVICE, PRICING_SERVICE, TRANSACTION_REPOSITORY);
+    public static final OrderService ORDER_SERVICE = new OrderService(PRODUCT_REPOSITORY, INVENTORY_SERVICE, PRICING_SERVICE, TRANSACTION_REPOSITORY, MEMBER_REPOSITORY);
     public static final ReportService REPORT_SERVICE = new ReportService(TRANSACTION_REPOSITORY);
 
     private ApplicationContext() {

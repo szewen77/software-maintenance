@@ -15,6 +15,8 @@ import oopassignment.exception.InsufficientStockException;
 import oopassignment.exception.InvalidInputException;
 import oopassignment.repository.ProductRepository;
 import oopassignment.repository.TransactionRepository;
+import oopassignment.repository.MemberRepository;
+import oopassignment.domain.member.MemberRecord;
 import oopassignment.util.ValidationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,15 +28,27 @@ public class OrderService {
     private final InventoryService inventoryService;
     private final PricingService pricingService;
     private final TransactionRepository transactionRepository;
+    private final MemberRepository memberRepository;
 
     public OrderService(ProductRepository productRepository,
                         InventoryService inventoryService,
                         PricingService pricingService,
-                        TransactionRepository transactionRepository) {
+                        TransactionRepository transactionRepository,
+                        MemberRepository memberRepository) {
         this.productRepository = productRepository;
         this.inventoryService = inventoryService;
         this.pricingService = pricingService;
         this.transactionRepository = transactionRepository;
+        this.memberRepository = memberRepository;
+    }
+
+    // Backward compatibility constructor (deprecated)
+    @Deprecated
+    public OrderService(ProductRepository productRepository,
+                        InventoryService inventoryService,
+                        PricingService pricingService,
+                        TransactionRepository transactionRepository) {
+        this(productRepository, inventoryService, pricingService, transactionRepository, null);
     }
 
     public OrderResult placeOrder(OrderRequest request) {
@@ -72,6 +86,28 @@ public class OrderService {
         double discount = subtotal - total;
         String transactionId = generateTransactionId();
 
+        // Handle WALLET payment - deduct from member's credit balance
+        if ("WALLET".equalsIgnoreCase(paymentMethod)) {
+            if (!isMember) {
+                throw new InvalidInputException("Wallet payment is only available for members");
+            }
+            if (memberRepository == null) {
+                throw new InvalidInputException("Member repository not available");
+            }
+            
+            MemberRecord member = memberRepository.findById(request.getMemberId())
+                    .orElseThrow(() -> new EntityNotFoundException("Member not found: " + request.getMemberId()));
+            
+            if (member.getCreditBalance() < total) {
+                throw new InvalidInputException("Insufficient wallet balance");
+            }
+            
+            // Deduct the amount from member's balance
+            member.setCreditBalance(member.getCreditBalance() - total);
+            memberRepository.update(member);
+            LOG.info("Deducted RM{} from member {} wallet", total, request.getMemberId());
+        }
+
         List<TransactionItem> itemsWithId = new ArrayList<>();
         for (TransactionItem item : transactionItems) {
             itemsWithId.add(new TransactionItem(
@@ -98,7 +134,7 @@ public class OrderService {
             inventoryService.reduceStock(itemRequest.getProductId(), itemRequest.getSize(), itemRequest.getQuantity());
         }
 
-        LOG.info("Order {} placed with {} items (member={})", transactionId, transactionItems.size(), isMember);
+        LOG.info("Order {} placed with {} items (member={}, payment={})", transactionId, transactionItems.size(), isMember, paymentMethod);
         return new OrderResult(transactionId, subtotal, discount, total, isMember);
     }
 

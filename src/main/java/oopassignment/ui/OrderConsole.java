@@ -2,14 +2,17 @@ package oopassignment.ui;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import oopassignment.domain.order.OrderItemRequest;
 import oopassignment.domain.order.OrderRequest;
 import oopassignment.domain.order.OrderResult;
 import oopassignment.domain.product.ProductRecord;
 import oopassignment.domain.product.StockItem;
+import oopassignment.domain.member.MemberRecord;
 import oopassignment.service.InventoryService;
 import oopassignment.service.OrderService;
 import oopassignment.service.ProductService;
+import oopassignment.service.MemberService;
 import oopassignment.util.ApplicationContext;
 
 import static oopassignment.ui.BootsDo.*;
@@ -19,6 +22,7 @@ public class OrderConsole {
     private static final ProductService productService = ApplicationContext.PRODUCT_SERVICE;
     private static final InventoryService inventoryService = ApplicationContext.INVENTORY_SERVICE;
     private static final OrderService orderService = ApplicationContext.ORDER_SERVICE;
+    private static final MemberService memberService = ApplicationContext.MEMBER_SERVICE;
 
     
     // Simple alias to keep console navigation consistent
@@ -41,7 +45,26 @@ public class OrderConsole {
                     p.getProductId(), p.getName(), p.getCategory(), p.getPrice(), totalQty);
         }
 
-        String memberId = readOptionalLine("Member ID (blank if non-member): ");
+        // Validate member ID if provided
+        String memberId = null;
+        MemberRecord member = null;
+        while (true) {
+            String inputMemberId = readOptionalLine("Member ID (blank if non-member): ");
+            if (inputMemberId == null || inputMemberId.isBlank()) {
+                // No member, continue
+                break;
+            }
+            Optional<MemberRecord> memberOpt = memberService.findById(inputMemberId);
+            if (memberOpt.isPresent()) {
+                member = memberOpt.get();
+                memberId = inputMemberId;
+                System.out.println(ANSI_GREEN + "Member found: " + member.getName() + ANSI_BLACK);
+                break;
+            } else {
+                System.out.println(ANSI_RED + "Member ID not found. Please try again or leave blank." + ANSI_BLACK);
+            }
+        }
+
         String customerId = readOptionalLine("Customer ID (blank to auto-generate walk-in): ");
 
         List<OrderItemRequest> items = new ArrayList<>();
@@ -68,7 +91,10 @@ public class OrderConsole {
             return;
         }
 
-        String payment = readPaymentMethod();
+        // Calculate order total before payment
+        double orderTotal = calculateOrderTotal(items, memberId != null);
+
+        String payment = readPaymentMethod(member, orderTotal);
 
         try {
             OrderRequest request = new OrderRequest(
@@ -99,13 +125,93 @@ public class OrderConsole {
         System.out.println(border);
     }
     
-    private static String readPaymentMethod() {
+    private static double calculateOrderTotal(List<OrderItemRequest> items, boolean isMember) {
+        double subtotal = 0;
+        for (OrderItemRequest item : items) {
+            Optional<ProductRecord> productOpt = productService.findById(item.getProductId());
+            if (productOpt.isPresent()) {
+                subtotal += productOpt.get().getPrice() * item.getQuantity();
+            }
+        }
+        // Apply 5% member discount if applicable
+        if (isMember) {
+            subtotal = subtotal * 0.95;
+        }
+        return subtotal;
+    }
+
+    private static String readPaymentMethod(MemberRecord member, double orderTotal) {
         while (true) {
-            String method = readRequiredLine("Payment method (CASH/CARD): ").toUpperCase();
+            String prompt;
+            if (member != null) {
+                prompt = "Payment method (CASH/CARD/WALLET): ";
+            } else {
+                prompt = "Payment method (CASH/CARD): ";
+            }
+            String method = readRequiredLine(prompt).toUpperCase();
+            
             if ("CASH".equals(method) || "CARD".equals(method)) {
                 return method;
             }
-            System.out.println(ANSI_RED + "Supported methods: CASH or CARD." + ANSI_BLACK);
+            
+            if ("WALLET".equals(method)) {
+                if (member == null) {
+                    System.out.println(ANSI_RED + "Wallet payment is only available for members." + ANSI_BLACK);
+                    continue;
+                }
+                
+                // Show current balance
+                System.out.printf(ANSI_CYAN + "Current Boost Wallet Balance: RM%.2f%n" + ANSI_BLACK, member.getCreditBalance());
+                System.out.printf("Order Total: RM%.2f%n", orderTotal);
+                
+                // Check if balance is sufficient
+                if (member.getCreditBalance() >= orderTotal) {
+                    System.out.println(ANSI_GREEN + "Sufficient balance available!" + ANSI_BLACK);
+                    return "WALLET";
+                } else {
+                    double shortfall = orderTotal - member.getCreditBalance();
+                    System.out.printf(ANSI_YELLOW + "Insufficient balance. Short by: RM%.2f%n" + ANSI_BLACK, shortfall);
+                    
+                    // Offer top-up
+                    while (true) {
+                        String topUpInput = readOptionalLine("Enter amount to top up (or X to go back): ");
+                        if ("X".equalsIgnoreCase(topUpInput)) {
+                            System.out.println(ANSI_YELLOW + "Returning to payment method selection..." + ANSI_BLACK);
+                            break;
+                        }
+                        
+                        try {
+                            double topUpAmount = Double.parseDouble(topUpInput);
+                            if (topUpAmount <= 0) {
+                                System.out.println(ANSI_RED + "Top-up amount must be greater than 0." + ANSI_BLACK);
+                                continue;
+                            }
+                            
+                            // Top up the member
+                            MemberRecord updatedMember = memberService.topUpCredit(member.getMemberId(), topUpAmount);
+                            member.setCreditBalance(updatedMember.getCreditBalance());
+                            System.out.printf(ANSI_GREEN + "Top-up successful! New balance: RM%.2f%n" + ANSI_BLACK, member.getCreditBalance());
+                            
+                            // Check again if balance is now sufficient
+                            if (member.getCreditBalance() >= orderTotal) {
+                                System.out.println(ANSI_GREEN + "Balance is now sufficient!" + ANSI_BLACK);
+                                return "WALLET";
+                            } else {
+                                double remainingShortfall = orderTotal - member.getCreditBalance();
+                                System.out.printf(ANSI_YELLOW + "Still short by: RM%.2f%n" + ANSI_BLACK, remainingShortfall);
+                            }
+                        } catch (NumberFormatException e) {
+                            System.out.println(ANSI_RED + "Invalid amount. Please enter a valid number or X to cancel." + ANSI_BLACK);
+                        }
+                    }
+                }
+            } else {
+                if (member != null) {
+                    System.out.println(ANSI_RED + "Supported methods: CASH, CARD, or WALLET." + ANSI_BLACK);
+                } else {
+                    System.out.println(ANSI_RED + "Supported methods: CASH or CARD." + ANSI_BLACK);
+                }
+            }
         }
     }
 }

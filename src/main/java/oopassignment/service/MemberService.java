@@ -58,6 +58,18 @@ public class MemberService {
         return member;
     }
 
+    public MemberRecord deductCredit(String memberId, double amount) {
+        ValidationUtils.requirePositive(amount, "Deduction amount");
+        MemberRecord member = getMemberOrThrow(memberId);
+        if (member.getCreditBalance() < amount) {
+            throw new InvalidInputException("Insufficient credit balance");
+        }
+        member.setCreditBalance(member.getCreditBalance() - amount);
+        repository.update(member);
+        LOG.info("Deducted {} from member {}", amount, memberId);
+        return member;
+    }
+
     public Optional<MemberRecord> findById(String memberId) {
         String normalized = normalizeId(memberId);
         if (normalized.isEmpty()) {
