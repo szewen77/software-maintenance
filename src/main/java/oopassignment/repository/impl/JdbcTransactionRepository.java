@@ -25,12 +25,12 @@ public class JdbcTransactionRepository implements TransactionRepository {
     @Override
     public void saveTransaction(TransactionHeader header, List<TransactionItem> items) {
         String headerSql = """
-                INSERT INTO transaction_header(transaction_id, datetime, member_id, customer_id, total_amount, payment_method)
+                INSERT INTO transaction_header(transaction_id, datetime, member_id, customer_type, total_amount, payment_method)
                 VALUES(?,?,?,?,?,?)
                 ON CONFLICT(transaction_id) DO UPDATE SET
                     datetime=excluded.datetime,
                     member_id=excluded.member_id,
-                    customer_id=excluded.customer_id,
+                    customer_type=excluded.customer_type,
                     total_amount=excluded.total_amount,
                     payment_method=excluded.payment_method
                 """;
@@ -50,7 +50,7 @@ public class JdbcTransactionRepository implements TransactionRepository {
                     ps.setString(1, header.getTransactionId());
                     ps.setString(2, header.getDateTime().toString());
                     ps.setString(3, header.getMemberId());
-                    ps.setString(4, header.getCustomerId());
+                    ps.setString(4, header.getCustomerType());
                     ps.setDouble(5, header.getTotalAmount());
                     ps.setString(6, header.getPaymentMethod());
                     ps.executeUpdate();
@@ -112,11 +112,31 @@ public class JdbcTransactionRepository implements TransactionRepository {
     }
 
     private TransactionHeader mapHeader(ResultSet rs) throws SQLException {
+        // Handle migration: if customer_id exists, convert to customer_type
+        String customerType;
+        try {
+            customerType = rs.getString("customer_type");
+            if (customerType == null || customerType.isBlank()) {
+                // Fallback: determine from member_id if customer_type is null
+                String memberId = rs.getString("member_id");
+                customerType = (memberId != null && !memberId.isBlank()) ? "MEMBER" : "WALK-IN";
+            }
+        } catch (SQLException e) {
+            // Column doesn't exist, try customer_id and convert
+            try {
+                String customerId = rs.getString("customer_id");
+                String memberId = rs.getString("member_id");
+                customerType = (memberId != null && !memberId.isBlank()) ? "MEMBER" : "WALK-IN";
+            } catch (SQLException e2) {
+                // Neither exists, default to WALK-IN
+                customerType = "WALK-IN";
+            }
+        }
         return new TransactionHeader(
                 rs.getString("transaction_id"),
                 java.time.LocalDateTime.parse(rs.getString("datetime")),
                 rs.getString("member_id"),
-                rs.getString("customer_id"),
+                customerType,
                 rs.getDouble("total_amount"),
                 rs.getString("payment_method")
         );

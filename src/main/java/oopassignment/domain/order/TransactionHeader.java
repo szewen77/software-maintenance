@@ -6,16 +6,16 @@ public class TransactionHeader {
     private final String transactionId;
     private final LocalDateTime dateTime;
     private final String memberId;
-    private final String customerId;
+    private final String customerType;
     private final double totalAmount;
     private final String paymentMethod;
 
-    public TransactionHeader(String transactionId, LocalDateTime dateTime, String memberId, String customerId,
+    public TransactionHeader(String transactionId, LocalDateTime dateTime, String memberId, String customerType,
                              double totalAmount, String paymentMethod) {
         this.transactionId = transactionId;
         this.dateTime = dateTime;
         this.memberId = memberId;
-        this.customerId = customerId;
+        this.customerType = customerType;
         this.totalAmount = totalAmount;
         this.paymentMethod = paymentMethod;
     }
@@ -32,8 +32,8 @@ public class TransactionHeader {
         return memberId;
     }
 
-    public String getCustomerId() {
-        return customerId;
+    public String getCustomerType() {
+        return customerType;
     }
 
     public double getTotalAmount() {

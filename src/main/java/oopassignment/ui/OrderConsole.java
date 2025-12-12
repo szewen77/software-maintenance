@@ -127,8 +127,6 @@ public class OrderConsole {
             }
         }
 
-        String customerId = readOptionalLine("Customer ID (blank to auto-generate walk-in): ");
-
         List<OrderItemRequest> items = new ArrayList<>();
         boolean more;
         do {
@@ -166,7 +164,6 @@ public class OrderConsole {
         try {
             OrderRequest request = new OrderRequest(
                     memberId == null || memberId.isBlank() ? null : memberId,
-                    customerId == null || customerId.isBlank() ? "CU-WALKIN" : customerId,
                     items,
                     payment
             );

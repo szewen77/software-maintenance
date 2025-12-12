@@ -73,12 +73,79 @@ public final class Database {
         }
         int currentVersion = getSchemaVersion(conn);
         if (currentVersion < AppConfig.SCHEMA_VERSION) {
+            migrateSchema(conn, currentVersion);
             try (PreparedStatement ps = conn.prepareStatement(
                     "INSERT OR REPLACE INTO schema_version(version, applied_at) VALUES(?, datetime('now'))")) {
                 ps.setInt(1, AppConfig.SCHEMA_VERSION);
                 ps.executeUpdate();
             }
             LOG.info("Schema version set to {}", AppConfig.SCHEMA_VERSION);
+        }
+    }
+    
+    private static void migrateSchema(Connection conn, int fromVersion) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            // Migration: Change customer_id to customer_type in transaction_header
+            // Check if customer_id column exists
+            try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(transaction_header)")) {
+                boolean hasCustomerId = false;
+                boolean hasCustomerType = false;
+                while (rs.next()) {
+                    String colName = rs.getString("name");
+                    if ("customer_id".equals(colName)) {
+                        hasCustomerId = true;
+                    }
+                    if ("customer_type".equals(colName)) {
+                        hasCustomerType = true;
+                    }
+                }
+                
+                if (hasCustomerId && !hasCustomerType) {
+                    // Migrate: Add customer_type column, populate it, then drop customer_id
+                    LOG.info("Migrating transaction_header: customer_id -> customer_type");
+                    stmt.executeUpdate("ALTER TABLE transaction_header ADD COLUMN customer_type TEXT");
+                    // Update existing records: if member_id is not null, set to MEMBER, else WALK-IN
+                    stmt.executeUpdate("""
+                        UPDATE transaction_header 
+                        SET customer_type = CASE 
+                            WHEN member_id IS NOT NULL AND member_id != '' THEN 'MEMBER' 
+                            ELSE 'WALK-IN' 
+                        END
+                        WHERE customer_type IS NULL
+                        """);
+                    // Drop the old customer_id column (SQLite doesn't support DROP COLUMN directly)
+                    // We'll create a new table and copy data
+                    stmt.executeUpdate("""
+                        CREATE TABLE transaction_header_new(
+                            transaction_id TEXT PRIMARY KEY,
+                            datetime TEXT NOT NULL,
+                            member_id TEXT,
+                            customer_type TEXT NOT NULL,
+                            total_amount REAL NOT NULL,
+                            payment_method TEXT NOT NULL
+                        )
+                        """);
+                    stmt.executeUpdate("""
+                        INSERT INTO transaction_header_new 
+                        SELECT transaction_id, datetime, member_id, 
+                               CASE WHEN member_id IS NOT NULL AND member_id != '' THEN 'MEMBER' ELSE 'WALK-IN' END,
+                               total_amount, payment_method
+                        FROM transaction_header
+                        """);
+                    stmt.executeUpdate("DROP TABLE transaction_header");
+                    stmt.executeUpdate("ALTER TABLE transaction_header_new RENAME TO transaction_header");
+                    LOG.info("Migration completed: customer_id -> customer_type");
+                }
+            }
+            
+            // Drop customer table if it exists (no longer needed)
+            try (ResultSet rs = stmt.executeQuery(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='customer'")) {
+                if (rs.next()) {
+                    LOG.info("Dropping unused customer table");
+                    stmt.executeUpdate("DROP TABLE customer");
+                }
+            }
         }
     }
 
@@ -107,14 +174,6 @@ public final class Database {
                     )
                     """);
             stmt.executeUpdate("""
-                    CREATE TABLE IF NOT EXISTS customer(
-                        customer_id TEXT PRIMARY KEY,
-                        name TEXT NOT NULL,
-                        registered_date TEXT NOT NULL,
-                        last_purchase_date TEXT
-                    )
-                    """);
-            stmt.executeUpdate("""
                     CREATE TABLE IF NOT EXISTS product(
                         product_id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -136,7 +195,7 @@ public final class Database {
                         transaction_id TEXT PRIMARY KEY,
                         datetime TEXT NOT NULL,
                         member_id TEXT,
-                        customer_id TEXT,
+                        customer_type TEXT NOT NULL,
                         total_amount REAL NOT NULL,
                         payment_method TEXT NOT NULL
                     )
@@ -158,7 +217,6 @@ public final class Database {
     private static void seedData(Connection conn) throws SQLException {
         seedEmployees(conn);
         seedMembers(conn);
-        seedCustomers(conn);
         seedProducts(conn);
     }
 
@@ -194,18 +252,6 @@ public final class Database {
         }
     }
 
-    private static void seedCustomers(Connection conn) throws SQLException {
-        int count = getCount(conn, "customer");
-        if (count > 0) {
-            return;
-        }
-        try (Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate("""
-                    INSERT INTO customer(customer_id, name, registered_date)
-                    VALUES ('CU001','Walk-in',date('now'))
-                    """);
-        }
-    }
 
     private static void seedProducts(Connection conn) throws SQLException {
         int count = getCount(conn, "product");

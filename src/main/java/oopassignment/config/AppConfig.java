@@ -21,5 +21,5 @@ public final class AppConfig {
 
     // DB config
     public static final String DB_URL = "jdbc:sqlite:bootsdo.db";
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2; // Version 2: customer_id -> customer_type, removed customer table
 }

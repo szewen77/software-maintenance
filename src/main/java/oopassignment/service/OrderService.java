@@ -124,7 +124,7 @@ public class OrderService {
                 transactionId,
                 LocalDateTime.now(),
                 request.getMemberId(),
-                request.getCustomerId(),
+                request.getCustomerType(),
                 total,
                 paymentMethod
         );
