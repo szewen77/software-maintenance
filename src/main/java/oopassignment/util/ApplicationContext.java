@@ -6,8 +6,6 @@ import oopassignment.service.AuthService;
 import oopassignment.repository.MemberRepository;
 import oopassignment.service.MemberService;
 import oopassignment.config.Database;
-import oopassignment.repository.CustomerRepository;
-import oopassignment.service.CustomerService;
 import oopassignment.repository.ProductRepository;
 import oopassignment.repository.StockRepository;
 import oopassignment.service.ProductService;
@@ -20,8 +18,6 @@ import oopassignment.service.OrderService;
 import oopassignment.service.ReportService;
 import oopassignment.repository.impl.InMemoryMemberRepository;
 import oopassignment.repository.impl.JdbcMemberRepository;
-import oopassignment.repository.impl.InMemoryCustomerRepository;
-import oopassignment.repository.impl.JdbcCustomerRepository;
 import oopassignment.repository.impl.InMemoryProductRepository;
 import oopassignment.repository.impl.JdbcProductRepository;
 import oopassignment.repository.impl.InMemoryStockRepository;
@@ -39,9 +35,6 @@ public final class ApplicationContext {
 
     public static final MemberRepository MEMBER_REPOSITORY = chooseMemberRepository();
     public static final MemberService MEMBER_SERVICE = new MemberService(MEMBER_REPOSITORY);
-
-    public static final CustomerRepository CUSTOMER_REPOSITORY = chooseCustomerRepository();
-    public static final CustomerService CUSTOMER_SERVICE = new CustomerService(CUSTOMER_REPOSITORY);
 
     public static final ProductRepository PRODUCT_REPOSITORY = chooseProductRepository();
     public static final StockRepository STOCK_REPOSITORY = chooseStockRepository();
@@ -68,13 +61,6 @@ public final class ApplicationContext {
             return new JdbcMemberRepository();
         }
         return new InMemoryMemberRepository();
-    }
-
-    private static CustomerRepository chooseCustomerRepository() {
-        if (Database.isAvailable()) {
-            return new JdbcCustomerRepository();
-        }
-        return new InMemoryCustomerRepository();
     }
 
     private static ProductRepository chooseProductRepository() {
