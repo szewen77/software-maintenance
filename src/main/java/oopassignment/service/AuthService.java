@@ -35,14 +35,12 @@ public class AuthService {
             LOG.warn("Login blocked for locked user {}", username);
             return new AuthResult(false, true, msg, null);
         }
-
         Optional<EmployeeRecord> employeeOpt = repository.findByUsername(username);
         if (employeeOpt.isEmpty()) {
             boolean locked = recordFailure(username, now);
             LOG.warn("Login failed for missing user {}", username);
             return new AuthResult(false, locked, "Invalid username or password.", null);
         }
-
         EmployeeRecord employee = employeeOpt.get();
         if (!employee.isActive()) {
             LOG.warn("Inactive account login attempt for {}", username);
