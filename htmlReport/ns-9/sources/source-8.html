@@ -1,0 +1,206 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > ProductService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">oopassignment.service</a>
+</div>
+
+<h1>Coverage Summary for Class: ProductService (oopassignment.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProductService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    71.4%
+  </span>
+  <span class="absValue">
+    (10/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.4%
+  </span>
+  <span class="absValue">
+    (34/36)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package oopassignment.service;
+&nbsp;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
+&nbsp;import oopassignment.config.AppConfig;
+&nbsp;import oopassignment.domain.product.ProductRecord;
+&nbsp;import oopassignment.domain.product.ProductStatus;
+&nbsp;import oopassignment.exception.EntityNotFoundException;
+&nbsp;import oopassignment.exception.InsufficientStockException;
+&nbsp;import oopassignment.repository.ProductRepository;
+&nbsp;import oopassignment.repository.StockRepository;
+&nbsp;import oopassignment.util.ValidationUtils;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;
+&nbsp;public class ProductService {
+&nbsp;
+<b class="fc">&nbsp;    private static final Logger LOG = LoggerFactory.getLogger(ProductService.class);</b>
+&nbsp;    private final ProductRepository productRepository;
+&nbsp;    private final StockRepository stockRepository;
+&nbsp;
+<b class="fc">&nbsp;    public ProductService(ProductRepository productRepository, StockRepository stockRepository) {</b>
+<b class="fc">&nbsp;        this.productRepository = productRepository;</b>
+<b class="fc">&nbsp;        this.stockRepository = stockRepository;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public ProductRecord addProduct(String name, String category, double price) {
+<b class="fc">&nbsp;        String cleanName = ValidationUtils.requireNotBlank(name, &quot;Name&quot;);</b>
+<b class="fc">&nbsp;        String normalizedCategory = ValidationUtils.validateCategory(category, AppConfig.ALLOWED_PRODUCT_CATEGORIES);</b>
+<b class="fc">&nbsp;        ValidationUtils.requirePositive(price, &quot;Price&quot;);</b>
+<b class="fc">&nbsp;        String id = generateId();</b>
+<b class="fc">&nbsp;        ProductRecord product = new ProductRecord(id, cleanName, normalizedCategory, price, ProductStatus.ACTIVE);</b>
+<b class="fc">&nbsp;        productRepository.save(product);</b>
+<b class="fc">&nbsp;        LOG.info(&quot;Added product {} ({})&quot;, id, normalizedCategory);</b>
+<b class="fc">&nbsp;        return product;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public void deleteProduct(String productId) {
+<b class="fc">&nbsp;        ProductRecord existing = getProductOrThrow(productId);</b>
+<b class="pc">&nbsp;        if (!canDelete(existing.getProductId())) {</b>
+<b class="fc">&nbsp;            throw new InsufficientStockException(&quot;Cannot delete product with available stock&quot;);</b>
+&nbsp;        }
+<b class="nc">&nbsp;        productRepository.delete(existing.getProductId());</b>
+<b class="nc">&nbsp;        LOG.warn(&quot;Deleted product {}&quot;, existing.getProductId());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public boolean canDelete(String productId) {
+<b class="fc">&nbsp;        return stockRepository.getTotalQuantity(productId) == 0;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public Optional&lt;ProductRecord&gt; findById(String id) {
+<b class="fc">&nbsp;        if (id == null) {</b>
+<b class="fc">&nbsp;            return Optional.empty();</b>
+&nbsp;        }
+<b class="fc">&nbsp;        String normalized = id.trim();</b>
+<b class="fc">&nbsp;        if (normalized.isEmpty()) {</b>
+<b class="fc">&nbsp;            return Optional.empty();</b>
+&nbsp;        }
+&nbsp;        // normalize to uppercase so P001 and p001 both work
+<b class="fc">&nbsp;        normalized = normalized.toUpperCase();</b>
+<b class="fc">&nbsp;        return productRepository.findById(normalized);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public List&lt;ProductRecord&gt; findAll() {
+<b class="fc">&nbsp;        return productRepository.findAll();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private String generateId() {
+<b class="fc">&nbsp;        int max = 0;</b>
+<b class="fc">&nbsp;        for (ProductRecord product : productRepository.findAll()) {</b>
+<b class="fc">&nbsp;            String pid = product.getProductId();</b>
+<b class="pc">&nbsp;            if (pid != null &amp;&amp; pid.startsWith(&quot;P&quot;)) {</b>
+&nbsp;                try {
+<b class="fc">&nbsp;                    int num = Integer.parseInt(pid.substring(1));</b>
+<b class="pc">&nbsp;                    if (num &gt; max) {</b>
+<b class="fc">&nbsp;                        max = num;</b>
+&nbsp;                    }
+&nbsp;                } catch (NumberFormatException ignore) {
+&nbsp;                    // skip malformed ids
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return &quot;P&quot; + String.format(&quot;%03d&quot;, max + 1);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private ProductRecord getProductOrThrow(String productId) {
+<b class="fc">&nbsp;        return findById(productId)</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new EntityNotFoundException(&quot;Product not found: &quot; + productId));</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-12-12 10:30</div>
+</div>
+</body>
+</html>

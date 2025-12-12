@@ -1,0 +1,211 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > InMemoryStockRepository</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">oopassignment.repository.impl</a>
+</div>
+
+<h1>Coverage Summary for Class: InMemoryStockRepository (oopassignment.repository.impl)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">InMemoryStockRepository</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    62.5%
+  </span>
+  <span class="absValue">
+    (15/24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.6%
+  </span>
+  <span class="absValue">
+    (31/35)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package oopassignment.repository.impl;
+&nbsp;import oopassignment.*;
+&nbsp;import oopassignment.domain.auth.*;
+&nbsp;import oopassignment.domain.member.*;
+&nbsp;import oopassignment.domain.product.*;
+&nbsp;import oopassignment.domain.order.*;
+&nbsp;import oopassignment.repository.*;
+&nbsp;import oopassignment.util.*;
+&nbsp;import oopassignment.config.*;
+&nbsp;
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.LinkedHashMap;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Map;
+&nbsp;
+&nbsp;public class InMemoryStockRepository implements StockRepository {
+&nbsp;
+<b class="fc">&nbsp;    private final Map&lt;String, StockItem&gt; stock = new LinkedHashMap&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;    public InMemoryStockRepository() {</b>
+<b class="fc">&nbsp;        seedDefaults();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private void seedDefaults() {
+<b class="fc">&nbsp;        setQuantity(&quot;P001&quot;, &quot;M&quot;, 10);</b>
+<b class="fc">&nbsp;        setQuantity(&quot;P001&quot;, &quot;L&quot;, 8);</b>
+<b class="fc">&nbsp;        setQuantity(&quot;P002&quot;, &quot;42&quot;, 5);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public List&lt;StockItem&gt; findByProductId(String productId) {
+&nbsp;        // Normalize to uppercase for case-insensitive comparison
+<b class="pc">&nbsp;        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;</b>
+<b class="fc">&nbsp;        List&lt;StockItem&gt; items = new ArrayList&lt;&gt;();</b>
+<b class="fc">&nbsp;        for (StockItem item : stock.values()) {</b>
+<b class="fc">&nbsp;            if (item.getProductId().toUpperCase().equals(normalizedProductId)) {</b>
+<b class="fc">&nbsp;                items.add(item);</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return items;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public int getQuantity(String productId, String size) {
+&nbsp;        // Normalize to uppercase for case-insensitive comparison
+<b class="pc">&nbsp;        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;</b>
+<b class="pc">&nbsp;        String normalizedSize = size != null ? size.toUpperCase().trim() : null;</b>
+<b class="fc">&nbsp;        return stock.getOrDefault(key(normalizedProductId, normalizedSize), new StockItem(normalizedProductId, normalizedSize, 0)).getQuantity();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public int getTotalQuantity(String productId) {
+<b class="fc">&nbsp;        int total = 0;</b>
+<b class="fc">&nbsp;        for (StockItem item : findByProductId(productId)) {</b>
+<b class="fc">&nbsp;            total += item.getQuantity();</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return total;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public void setQuantity(String productId, String size, int qty) {
+<b class="pc">&nbsp;        if (qty &lt; 0) {</b>
+<b class="nc">&nbsp;            throw new IllegalArgumentException(&quot;Quantity cannot be negative&quot;);</b>
+&nbsp;        }
+&nbsp;        // Normalize to uppercase before storing
+<b class="pc">&nbsp;        String normalizedProductId = productId != null ? productId.toUpperCase().trim() : null;</b>
+<b class="pc">&nbsp;        String normalizedSize = size != null ? size.toUpperCase().trim() : null;</b>
+<b class="fc">&nbsp;        stock.put(key(normalizedProductId, normalizedSize), new StockItem(normalizedProductId, normalizedSize, qty));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public void increaseQuantity(String productId, String size, int qty) {
+<b class="pc">&nbsp;        if (qty &lt; 0) {</b>
+<b class="nc">&nbsp;            throw new IllegalArgumentException(&quot;Quantity cannot be negative&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        int current = getQuantity(productId, size);</b>
+<b class="fc">&nbsp;        setQuantity(productId, size, current + qty);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public void decreaseQuantity(String productId, String size, int qty) {
+<b class="pc">&nbsp;        if (qty &lt; 0) {</b>
+<b class="nc">&nbsp;            throw new IllegalArgumentException(&quot;Quantity cannot be negative&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        int current = getQuantity(productId, size);</b>
+<b class="pc">&nbsp;        if (qty &gt; current) {</b>
+<b class="nc">&nbsp;            throw new IllegalStateException(&quot;Not enough stock to reduce&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        setQuantity(productId, size, current - qty);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private String key(String productId, String size) {
+<b class="fc">&nbsp;        return productId + &quot;|&quot; + size;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-12-12 10:30</div>
+</div>
+</body>
+</html>

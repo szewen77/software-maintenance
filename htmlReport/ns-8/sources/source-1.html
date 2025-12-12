@@ -1,0 +1,159 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > InMemoryCustomerRepository</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">oopassignment.repository.impl</a>
+</div>
+
+<h1>Coverage Summary for Class: InMemoryCustomerRepository (oopassignment.repository.impl)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">InMemoryCustomerRepository</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package oopassignment.repository.impl;
+&nbsp;import oopassignment.*;
+&nbsp;import oopassignment.domain.auth.*;
+&nbsp;import oopassignment.domain.member.*;
+&nbsp;import oopassignment.domain.product.*;
+&nbsp;import oopassignment.domain.order.*;
+&nbsp;import oopassignment.repository.*;
+&nbsp;import oopassignment.util.*;
+&nbsp;import oopassignment.config.*;
+&nbsp;
+&nbsp;import java.time.LocalDate;
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.LinkedHashMap;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Map;
+&nbsp;import java.util.Optional;
+&nbsp;
+&nbsp;public class InMemoryCustomerRepository implements CustomerRepository {
+&nbsp;
+<b class="fc">&nbsp;    private final Map&lt;String, CustomerRecord&gt; customers = new LinkedHashMap&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;    public InMemoryCustomerRepository() {</b>
+<b class="fc">&nbsp;        seedDefaults();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private void seedDefaults() {
+<b class="fc">&nbsp;        CustomerRecord walkIn = new CustomerRecord(</b>
+&nbsp;                &quot;CU001&quot;,
+&nbsp;                &quot;Walk-in&quot;,
+<b class="fc">&nbsp;                LocalDate.now().minusDays(1),</b>
+&nbsp;                null
+&nbsp;        );
+<b class="fc">&nbsp;        save(walkIn);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public Optional&lt;CustomerRecord&gt; findById(String customerId) {
+<b class="fc">&nbsp;        return Optional.ofNullable(customers.get(customerId));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public void save(CustomerRecord customer) {
+<b class="fc">&nbsp;        customers.put(customer.getCustomerId(), customer);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public void update(CustomerRecord customer) {
+<b class="fc">&nbsp;        customers.put(customer.getCustomerId(), customer);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public List&lt;CustomerRecord&gt; findAll() {
+<b class="fc">&nbsp;        return new ArrayList&lt;&gt;(customers.values());</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-12-12 10:30</div>
+</div>
+</body>
+</html>

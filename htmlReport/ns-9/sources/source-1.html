@@ -1,0 +1,213 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > AuthService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">oopassignment.service</a>
+</div>
+
+<h1>Coverage Summary for Class: AuthService (oopassignment.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AuthService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (15/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.4%
+  </span>
+  <span class="absValue">
+    (42/47)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package oopassignment.service;
+&nbsp;
+&nbsp;import java.util.HashMap;
+&nbsp;import java.util.Map;
+&nbsp;import java.util.Optional;
+&nbsp;import oopassignment.config.AppConfig;
+&nbsp;import oopassignment.domain.auth.EmployeeRecord;
+&nbsp;import oopassignment.domain.auth.Role;
+&nbsp;import oopassignment.repository.EmployeeRepository;
+&nbsp;import oopassignment.util.PasswordHasher;
+&nbsp;import oopassignment.AuthResult;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;
+&nbsp;public class AuthService {
+<b class="fc">&nbsp;    private static final Logger LOG = LoggerFactory.getLogger(AuthService.class);</b>
+&nbsp;    private static final int MAX_ATTEMPTS = AppConfig.MAX_LOGIN_ATTEMPTS;
+&nbsp;    private static final long LOCK_DURATION_MS = AppConfig.LOCK_DURATION_MS;
+&nbsp;
+&nbsp;    private final EmployeeRepository repository;
+&nbsp;    private final PasswordHasher hasher;
+<b class="fc">&nbsp;    private final Map&lt;String, Integer&gt; attempts = new HashMap&lt;&gt;();</b>
+<b class="fc">&nbsp;    private final Map&lt;String, Long&gt; lockUntil = new HashMap&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;    public AuthService(EmployeeRepository repository, PasswordHasher hasher) {</b>
+<b class="fc">&nbsp;        this.repository = repository;</b>
+<b class="fc">&nbsp;        this.hasher = hasher;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public AuthResult login(String username, String password) {
+<b class="fc">&nbsp;        long now = System.currentTimeMillis();</b>
+<b class="fc">&nbsp;        if (isLocked(username, now)) {</b>
+<b class="fc">&nbsp;            long remaining = lockUntil.get(username) - now;</b>
+<b class="fc">&nbsp;            String msg = &quot;Account locked. Try again in &quot; + Math.max(1, remaining / 1000) + &quot;s.&quot;;</b>
+<b class="fc">&nbsp;            LOG.warn(&quot;Login blocked for locked user {}&quot;, username);</b>
+<b class="fc">&nbsp;            return new AuthResult(false, true, msg, null);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        Optional&lt;EmployeeRecord&gt; employeeOpt = repository.findByUsername(username);</b>
+<b class="fc">&nbsp;        if (employeeOpt.isEmpty()) {</b>
+<b class="fc">&nbsp;            boolean locked = recordFailure(username, now);</b>
+<b class="fc">&nbsp;            LOG.warn(&quot;Login failed for missing user {}&quot;, username);</b>
+<b class="fc">&nbsp;            return new AuthResult(false, locked, &quot;Invalid username or password.&quot;, null);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        EmployeeRecord employee = employeeOpt.get();</b>
+<b class="pc">&nbsp;        if (!employee.isActive()) {</b>
+<b class="nc">&nbsp;            LOG.warn(&quot;Inactive account login attempt for {}&quot;, username);</b>
+<b class="nc">&nbsp;            return new AuthResult(false, false, &quot;Account is inactive.&quot;, null);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        String hashedInput = hasher.hash(password);</b>
+<b class="fc">&nbsp;        if (hashedInput.equals(employee.getPasswordHash())) {</b>
+<b class="fc">&nbsp;            resetAttempts(username);</b>
+<b class="fc">&nbsp;            LOG.info(&quot;User {} logged in successfully&quot;, username);</b>
+<b class="fc">&nbsp;            return new AuthResult(true, false, &quot;Login successful.&quot;, employee);</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            boolean locked = recordFailure(username, now);</b>
+<b class="fc">&nbsp;            LOG.warn(&quot;Login failed for {}&quot;, username);</b>
+<b class="fc">&nbsp;            return new AuthResult(false, locked, &quot;Invalid username or password.&quot;, null);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    public boolean hasRole(EmployeeRecord user, Role role) {
+<b class="pc">&nbsp;        return user != null &amp;&amp; user.getRole() == role;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private boolean recordFailure(String username, long now) {
+<b class="fc">&nbsp;        int current = attempts.getOrDefault(username, 0) + 1;</b>
+<b class="fc">&nbsp;        attempts.put(username, current);</b>
+<b class="fc">&nbsp;        if (current &gt;= MAX_ATTEMPTS) {</b>
+<b class="fc">&nbsp;            lockUntil.put(username, now + LOCK_DURATION_MS);</b>
+<b class="fc">&nbsp;            attempts.put(username, 0);</b>
+<b class="fc">&nbsp;            return true;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return false;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private boolean isLocked(String username, long now) {
+<b class="fc">&nbsp;        Long lockedUntil = lockUntil.get(username);</b>
+<b class="fc">&nbsp;        if (lockedUntil == null) {</b>
+<b class="fc">&nbsp;            return false;</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (now &gt;= lockedUntil) {</b>
+<b class="nc">&nbsp;            lockUntil.remove(username);</b>
+<b class="nc">&nbsp;            attempts.put(username, 0);</b>
+<b class="nc">&nbsp;            return false;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return true;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private void resetAttempts(String username) {
+<b class="fc">&nbsp;        attempts.put(username, 0);</b>
+<b class="fc">&nbsp;        lockUntil.remove(username);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-12-12 10:30</div>
+</div>
+</body>
+</html>

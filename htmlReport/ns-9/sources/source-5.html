@@ -1,0 +1,264 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > MemberService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">oopassignment.service</a>
+</div>
+
+<h1>Coverage Summary for Class: MemberService (oopassignment.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MemberService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.6%
+  </span>
+  <span class="absValue">
+    (22/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (65/65)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package oopassignment.service;
+&nbsp;
+&nbsp;import java.time.LocalDate;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
+&nbsp;import java.util.regex.Pattern;
+&nbsp;import oopassignment.domain.member.MemberRecord;
+&nbsp;import oopassignment.domain.member.MemberStatus;
+&nbsp;import oopassignment.exception.DuplicateEntityException;
+&nbsp;import oopassignment.exception.EntityNotFoundException;
+&nbsp;import oopassignment.exception.InvalidInputException;
+&nbsp;import oopassignment.repository.MemberRepository;
+&nbsp;import oopassignment.util.ValidationUtils;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;
+&nbsp;public class MemberService {
+<b class="fc">&nbsp;    private static final Logger LOG = LoggerFactory.getLogger(MemberService.class);</b>
+<b class="fc">&nbsp;    private static final Pattern IC_PATTERN = Pattern.compile(&quot;\\d{6}-?\\d{2}-?\\d{4}&quot;);</b>
+&nbsp;
+&nbsp;    private final MemberRepository repository;
+&nbsp;
+<b class="fc">&nbsp;    public MemberService(MemberRepository repository) {</b>
+<b class="fc">&nbsp;        this.repository = repository;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public MemberRecord registerMember(String name, String icNumber, double initialCredit) {
+<b class="fc">&nbsp;        String cleanName = ValidationUtils.requireNotBlank(name, &quot;Name&quot;);</b>
+<b class="fc">&nbsp;        String normalizedIc = normalizeIc(icNumber);</b>
+<b class="fc">&nbsp;        if (!isValidIc(normalizedIc)) {</b>
+<b class="fc">&nbsp;            throw new InvalidInputException(&quot;IC format invalid&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (repository.findByIc(normalizedIc).isPresent()) {</b>
+<b class="fc">&nbsp;            throw new DuplicateEntityException(&quot;Duplicate IC number&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        ValidationUtils.requireNonNegative(initialCredit, &quot;Initial credit&quot;);</b>
+&nbsp;
+<b class="fc">&nbsp;        String memberId = generateId();</b>
+<b class="fc">&nbsp;        MemberRecord member = new MemberRecord(</b>
+&nbsp;                memberId,
+&nbsp;                cleanName,
+&nbsp;                normalizedIc,
+&nbsp;                initialCredit,
+<b class="fc">&nbsp;                LocalDate.now(),</b>
+&nbsp;                MemberStatus.ACTIVE
+&nbsp;        );
+<b class="fc">&nbsp;        repository.save(member);</b>
+<b class="fc">&nbsp;        LOG.info(&quot;Registered member {} ({})&quot;, memberId, normalizedIc);</b>
+<b class="fc">&nbsp;        return member;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public MemberRecord topUpCredit(String memberId, double amount) {
+<b class="fc">&nbsp;        ValidationUtils.requirePositive(amount, &quot;Top up amount&quot;);</b>
+<b class="fc">&nbsp;        MemberRecord member = getMemberOrThrow(memberId);</b>
+<b class="fc">&nbsp;        member.setCreditBalance(member.getCreditBalance() + amount);</b>
+<b class="fc">&nbsp;        repository.update(member);</b>
+<b class="fc">&nbsp;        LOG.info(&quot;Topped up member {} by {}&quot;, memberId, amount);</b>
+<b class="fc">&nbsp;        return member;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public MemberRecord deductCredit(String memberId, double amount) {
+<b class="fc">&nbsp;        ValidationUtils.requirePositive(amount, &quot;Deduction amount&quot;);</b>
+<b class="fc">&nbsp;        MemberRecord member = getMemberOrThrow(memberId);</b>
+<b class="fc">&nbsp;        if (member.getCreditBalance() &lt; amount) {</b>
+<b class="fc">&nbsp;            throw new InvalidInputException(&quot;Insufficient credit balance&quot;);</b>
+&nbsp;        }
+<b class="fc">&nbsp;        member.setCreditBalance(member.getCreditBalance() - amount);</b>
+<b class="fc">&nbsp;        repository.update(member);</b>
+<b class="fc">&nbsp;        LOG.info(&quot;Deducted {} from member {}&quot;, amount, memberId);</b>
+<b class="fc">&nbsp;        return member;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public Optional&lt;MemberRecord&gt; findById(String memberId) {
+<b class="fc">&nbsp;        String normalized = normalizeId(memberId);</b>
+<b class="fc">&nbsp;        if (normalized.isEmpty()) {</b>
+<b class="fc">&nbsp;            return Optional.empty();</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return repository.findById(normalized);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public Optional&lt;MemberRecord&gt; findByIc(String icNumber) {
+<b class="fc">&nbsp;        return repository.findByIc(normalizeIc(icNumber));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public List&lt;MemberRecord&gt; searchByName(String keyword) {
+<b class="fc">&nbsp;        return repository.searchByName(keyword);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public List&lt;MemberRecord&gt; findAll() {
+<b class="fc">&nbsp;        return repository.findAll();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public boolean isValidIc(String icNumber) {
+<b class="fc">&nbsp;        if (icNumber == null) {</b>
+<b class="fc">&nbsp;            return false;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return IC_PATTERN.matcher(icNumber).matches();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    public String maskIc(String icNumber) {
+<b class="fc">&nbsp;        String normalized = normalizeIc(icNumber);</b>
+<b class="fc">&nbsp;        if (normalized.length() &lt; 8) {</b>
+<b class="fc">&nbsp;            return &quot;****&quot;;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        String firstPart = normalized.substring(0, 6);</b>
+<b class="fc">&nbsp;        String middlePart = normalized.substring(6, 8);</b>
+<b class="fc">&nbsp;        return firstPart + &quot;-&quot; + middlePart + &quot;-****&quot;;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private String normalizeIc(String icNumber) {
+<b class="pc">&nbsp;        return icNumber == null ? &quot;&quot; : icNumber.replaceAll(&quot;[^0-9]&quot;, &quot;&quot;);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private MemberRecord getMemberOrThrow(String memberId) {
+<b class="fc">&nbsp;        String normalized = normalizeId(memberId);</b>
+<b class="fc">&nbsp;        return repository.findById(normalized)</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new EntityNotFoundException(&quot;Member not found: &quot; + memberId));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private String generateId() {
+<b class="fc">&nbsp;        int max = 0;</b>
+<b class="fc">&nbsp;        for (MemberRecord member : repository.findAll()) {</b>
+<b class="fc">&nbsp;            String memberId = member.getMemberId();</b>
+<b class="pc">&nbsp;            if (memberId != null &amp;&amp; memberId.startsWith(&quot;MB&quot;)) {</b>
+&nbsp;                try {
+<b class="fc">&nbsp;                    int num = Integer.parseInt(memberId.substring(2));</b>
+<b class="pc">&nbsp;                    if (num &gt; max) {</b>
+<b class="fc">&nbsp;                        max = num;</b>
+&nbsp;                    }
+&nbsp;                } catch (NumberFormatException ignore) {
+&nbsp;                    // skip malformed ids
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return &quot;MB&quot; + String.format(&quot;%03d&quot;, max + 1);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private String normalizeId(String id) {
+<b class="fc">&nbsp;        if (id == null) {</b>
+<b class="fc">&nbsp;            return &quot;&quot;;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        String trimmed = id.trim();</b>
+<b class="fc">&nbsp;        if (trimmed.isEmpty()) {</b>
+<b class="fc">&nbsp;            return &quot;&quot;;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return trimmed.toUpperCase();</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-12-12 10:30</div>
+</div>
+</body>
+</html>
