@@ -50,9 +50,9 @@ public class ReportServiceTest {
 
     @Test
     public void salesSummaryAndMemberHistoryAreComputed() {
-        orderService.placeOrder(new OrderRequest("MB001", null,
+        orderService.placeOrder(new OrderRequest("MB001",
                 List.of(new OrderItemRequest("P001", "M", 1)), "CASH"));
-        orderService.placeOrder(new OrderRequest(null, "CU010",
+        orderService.placeOrder(new OrderRequest(null,
                 List.of(new OrderItemRequest("P002", "42", 1)), "CARD"));
 
         SalesSummary summary = reportService.getTotalSales(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1));
@@ -83,11 +83,11 @@ public class ReportServiceTest {
     @Test
     public void getTotalSalesIncludesMultipleTransactions() {
         // Create multiple transactions
-        orderService.placeOrder(new OrderRequest("MB001", "CU011",
+        orderService.placeOrder(new OrderRequest("MB001",
                 List.of(new OrderItemRequest("P001", "M", 1)), "CASH"));
-        orderService.placeOrder(new OrderRequest("MB001", "CU012",
+        orderService.placeOrder(new OrderRequest("MB001",
                 List.of(new OrderItemRequest("P001", "L", 2)), "CARD"));
-        orderService.placeOrder(new OrderRequest(null, "CU013",
+        orderService.placeOrder(new OrderRequest(null,
                 List.of(new OrderItemRequest("P002", "42", 1)), "CASH"));
         
         SalesSummary summary = reportService.getTotalSales(
@@ -100,9 +100,9 @@ public class ReportServiceTest {
     @Test
     public void getMemberPurchaseHistoryReturnsAllForMember() {
         // Create multiple purchases for same member
-        orderService.placeOrder(new OrderRequest("MB002", "CU014",
+        orderService.placeOrder(new OrderRequest("MB002",
                 List.of(new OrderItemRequest("P001", "M", 1)), "CASH"));
-        orderService.placeOrder(new OrderRequest("MB002", "CU015",
+        orderService.placeOrder(new OrderRequest("MB002",
                 List.of(new OrderItemRequest("P002", "42", 1)), "CARD"));
         
         List<MemberPurchase> purchases = reportService.getMemberPurchaseHistory("MB002");
@@ -115,7 +115,7 @@ public class ReportServiceTest {
         LocalDate today = LocalDate.now();
         
         // Use CASH instead of WALLET to avoid member dependency issues
-        orderService.placeOrder(new OrderRequest("MB003", "CU016",
+        orderService.placeOrder(new OrderRequest("MB003",
                 List.of(new OrderItemRequest("P001", "M", 1)), "CASH"));
         
         SalesSummary summary = reportService.getTotalSales(today, today.plusDays(1));
@@ -126,9 +126,9 @@ public class ReportServiceTest {
     @Test
     public void salesSummaryCalculatesCorrectAverage() {
         // Clear and create known transactions
-        orderService.placeOrder(new OrderRequest(null, "CU017",
+        orderService.placeOrder(new OrderRequest(null,
                 List.of(new OrderItemRequest("P001", "M", 2)), "CASH"));
-        orderService.placeOrder(new OrderRequest(null, "CU018",
+        orderService.placeOrder(new OrderRequest(null,
                 List.of(new OrderItemRequest("P001", "M", 2)), "CASH"));
         
         SalesSummary summary = reportService.getTotalSales(
@@ -141,7 +141,7 @@ public class ReportServiceTest {
     @Test
     public void memberPurchaseHistoryIncludesTransactionDetails() {
         // Use CARD instead of WALLET to avoid member balance issues
-        orderService.placeOrder(new OrderRequest("MB004", "CU019",
+        orderService.placeOrder(new OrderRequest("MB004",
                 List.of(new OrderItemRequest("P001", "M", 1)), "CARD"));
         
         List<MemberPurchase> purchases = reportService.getMemberPurchaseHistory("MB004");

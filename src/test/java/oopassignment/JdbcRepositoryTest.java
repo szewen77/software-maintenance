@@ -8,7 +8,6 @@ import oopassignment.config.Database;
 import oopassignment.domain.auth.EmployeeRecord;
 import oopassignment.domain.auth.EmploymentStatus;
 import oopassignment.domain.auth.Role;
-import oopassignment.domain.member.CustomerRecord;
 import oopassignment.domain.member.MemberRecord;
 import oopassignment.domain.member.MemberStatus;
 import oopassignment.domain.order.TransactionHeader;
@@ -155,38 +154,6 @@ public class JdbcRepositoryTest {
         
         MemberRecord updated = repo.findById("MBTEST3").orElseThrow();
         assertEquals(150.0, updated.getCreditBalance(), 0.001);
-    }
-
-    // Customer Repository Tests
-    @Test
-    public void jdbcCustomerRepositorySaveAndFind() {
-        if (!dbAvailable) return;
-        
-        JdbcCustomerRepository repo = new JdbcCustomerRepository();
-        CustomerRecord customer = new CustomerRecord("CUTEST1", "Test JDBC Customer",
-                LocalDate.now(), null);
-        
-        repo.save(customer);
-        Optional<CustomerRecord> found = repo.findById("CUTEST1");
-        
-        assertTrue("Should find saved customer", found.isPresent());
-        assertEquals("Test JDBC Customer", found.get().getName());
-    }
-
-    @Test
-    public void jdbcCustomerRepositoryUpdate() {
-        if (!dbAvailable) return;
-        
-        JdbcCustomerRepository repo = new JdbcCustomerRepository();
-        CustomerRecord customer = new CustomerRecord("CUTEST2", "Update Customer",
-                LocalDate.now(), null);
-        
-        repo.save(customer);
-        customer.setLastPurchaseDate(LocalDate.now());
-        repo.update(customer);
-        
-        CustomerRecord updated = repo.findById("CUTEST2").orElseThrow();
-        assertNotNull("Last purchase date should be set", updated.getLastPurchaseDate());
     }
 
     // Product Repository Tests

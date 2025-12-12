@@ -6,18 +6,15 @@ import java.util.Optional;
 import oopassignment.domain.auth.EmployeeRecord;
 import oopassignment.domain.auth.EmploymentStatus;
 import oopassignment.domain.auth.Role;
-import oopassignment.domain.member.CustomerRecord;
 import oopassignment.domain.member.MemberRecord;
 import oopassignment.domain.member.MemberStatus;
 import oopassignment.domain.product.ProductRecord;
 import oopassignment.domain.product.ProductStatus;
 import oopassignment.domain.product.StockItem;
-import oopassignment.repository.CustomerRepository;
 import oopassignment.repository.EmployeeRepository;
 import oopassignment.repository.MemberRepository;
 import oopassignment.repository.ProductRepository;
 import oopassignment.repository.StockRepository;
-import oopassignment.repository.impl.InMemoryCustomerRepository;
 import oopassignment.repository.impl.InMemoryEmployeeRepository;
 import oopassignment.repository.impl.InMemoryMemberRepository;
 import oopassignment.repository.impl.InMemoryProductRepository;
@@ -164,42 +161,6 @@ public class RepositoryTest {
     public void memberRepositoryFindAll() {
         MemberRepository repo = new InMemoryMemberRepository();
         List<MemberRecord> all = repo.findAll();
-        
-        assertNotNull("Find all should not return null", all);
-    }
-
-    // Customer Repository Tests
-    @Test
-    public void customerRepositorySaveAndFind() {
-        CustomerRepository repo = new InMemoryCustomerRepository();
-        CustomerRecord customer = new CustomerRecord("CU999", "Test Customer",
-                LocalDate.now(), null);
-        
-        repo.save(customer);
-        Optional<CustomerRecord> found = repo.findById("CU999");
-        
-        assertTrue("Should find saved customer", found.isPresent());
-        assertEquals("Test Customer", found.get().getName());
-    }
-
-    @Test
-    public void customerRepositoryUpdate() {
-        CustomerRepository repo = new InMemoryCustomerRepository();
-        CustomerRecord customer = new CustomerRecord("CU998", "Update Customer",
-                LocalDate.now(), null);
-        
-        repo.save(customer);
-        customer.setLastPurchaseDate(LocalDate.now());
-        repo.update(customer);
-        
-        CustomerRecord updated = repo.findById("CU998").orElseThrow();
-        assertNotNull("Last purchase date should be set", updated.getLastPurchaseDate());
-    }
-
-    @Test
-    public void customerRepositoryFindAll() {
-        CustomerRepository repo = new InMemoryCustomerRepository();
-        List<CustomerRecord> all = repo.findAll();
         
         assertNotNull("Find all should not return null", all);
     }
@@ -351,13 +312,6 @@ public class RepositoryTest {
     public void memberRepositoryFindByIdReturnsEmpty() {
         MemberRepository repo = new InMemoryMemberRepository();
         Optional<MemberRecord> found = repo.findById("NONEXISTENT");
-        assertFalse("Should return empty for non-existent ID", found.isPresent());
-    }
-
-    @Test
-    public void customerRepositoryFindByIdReturnsEmpty() {
-        CustomerRepository repo = new InMemoryCustomerRepository();
-        Optional<CustomerRecord> found = repo.findById("NONEXISTENT");
         assertFalse("Should return empty for non-existent ID", found.isPresent());
     }
 

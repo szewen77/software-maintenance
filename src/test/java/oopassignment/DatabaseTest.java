@@ -91,19 +91,6 @@ public class DatabaseTest {
     }
 
     @Test
-    public void databaseCustomerTableCreated() throws Exception {
-        if (!Database.isAvailable()) return;
-        
-        try (Connection conn = Database.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='customer'")) {
-            
-            assertTrue("Customer table should be created", rs.next());
-        }
-    }
-
-    @Test
     public void databaseProductTableCreated() throws Exception {
         if (!Database.isAvailable()) return;
         
@@ -219,20 +206,6 @@ public class DatabaseTest {
     }
 
     @Test
-    public void databaseCustomersSeeded() throws Exception {
-        if (!Database.isAvailable()) return;
-        
-        try (Connection conn = Database.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) as c FROM customer")) {
-            
-            assertTrue("Should have result", rs.next());
-            int count = rs.getInt("c");
-            assertTrue("Should have seeded customers", count >= 1);
-        }
-    }
-
-    @Test
     public void databaseProductsSeeded() throws Exception {
         if (!Database.isAvailable()) return;
         
@@ -304,7 +277,7 @@ public class DatabaseTest {
         if (!Database.isAvailable()) return;
         
         String[] expectedTables = {
-            "employee", "member", "customer", "product", "stock", 
+            "employee", "member", "product", "stock", 
             "transaction_header", "transaction_item", "schema_version"
         };
         
@@ -722,32 +695,6 @@ public class DatabaseTest {
     }
 
     @Test
-    public void databaseCustomerTableHasAllColumns() throws Exception {
-        if (!Database.isAvailable()) return;
-        
-        try (Connection conn = Database.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("PRAGMA table_info(customer)")) {
-            
-            boolean hasCustomerId = false, hasName = false;
-            boolean hasRegisteredDate = false, hasLastPurchaseDate = false;
-            
-            while (rs.next()) {
-                String colName = rs.getString("name");
-                if ("customer_id".equals(colName)) hasCustomerId = true;
-                if ("name".equals(colName)) hasName = true;
-                if ("registered_date".equals(colName)) hasRegisteredDate = true;
-                if ("last_purchase_date".equals(colName)) hasLastPurchaseDate = true;
-            }
-            
-            assertTrue("Should have customer_id", hasCustomerId);
-            assertTrue("Should have name", hasName);
-            assertTrue("Should have registered_date", hasRegisteredDate);
-            assertTrue("Should have last_purchase_date", hasLastPurchaseDate);
-        }
-    }
-
-    @Test
     public void databaseProductTableHasAllColumns() throws Exception {
         if (!Database.isAvailable()) return;
         
@@ -816,12 +763,6 @@ public class DatabaseTest {
             rs2.next();
             int memberCount = rs2.getInt("c");
             assertTrue("Should have members", memberCount >= 1);
-            
-            // Verify that customers exist
-            ResultSet rs3 = stmt.executeQuery("SELECT COUNT(*) as c FROM customer");
-            rs3.next();
-            int customerCount = rs3.getInt("c");
-            assertTrue("Should have customers", customerCount >= 1);
             
             // Verify that products exist
             ResultSet rs4 = stmt.executeQuery("SELECT COUNT(*) as c FROM product");
@@ -895,21 +836,6 @@ public class DatabaseTest {
             assertEquals(100.0, rs.getDouble("credit_balance"), 0.001);
             assertEquals("ACTIVE", rs.getString("status"));
             assertNotNull("join_date should be set", rs.getString("join_date"));
-        }
-    }
-
-    @Test
-    public void databaseCU001HasCorrectData() throws Exception {
-        if (!Database.isAvailable()) return;
-        
-        try (Connection conn = Database.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM customer WHERE customer_id='CU001'")) {
-            
-            assertTrue("CU001 should exist", rs.next());
-            assertEquals("CU001", rs.getString("customer_id"));
-            assertEquals("Walk-in", rs.getString("name"));
-            assertNotNull("registered_date should be set", rs.getString("registered_date"));
         }
     }
 

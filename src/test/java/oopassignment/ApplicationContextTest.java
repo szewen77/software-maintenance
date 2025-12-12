@@ -44,18 +44,6 @@ public class ApplicationContextTest {
     }
 
     @Test
-    public void customerRepositoryIsInitialized() {
-        assertNotNull("CustomerRepository should be initialized", 
-                ApplicationContext.CUSTOMER_REPOSITORY);
-    }
-
-    @Test
-    public void customerServiceIsInitialized() {
-        assertNotNull("CustomerService should be initialized", 
-                ApplicationContext.CUSTOMER_SERVICE);
-    }
-
-    @Test
     public void productRepositoryIsInitialized() {
         assertNotNull("ProductRepository should be initialized", 
                 ApplicationContext.PRODUCT_REPOSITORY);
@@ -110,7 +98,6 @@ public class ApplicationContextTest {
         assertNotNull(ApplicationContext.EMPLOYEE_SERVICE);
         assertNotNull(ApplicationContext.AUTH_SERVICE);
         assertNotNull(ApplicationContext.MEMBER_SERVICE);
-        assertNotNull(ApplicationContext.CUSTOMER_SERVICE);
         assertNotNull(ApplicationContext.PRODUCT_SERVICE);
         assertNotNull(ApplicationContext.INVENTORY_SERVICE);
         assertNotNull(ApplicationContext.ORDER_SERVICE);
@@ -123,7 +110,6 @@ public class ApplicationContextTest {
         // Verify all repositories can be accessed without exceptions
         assertNotNull(ApplicationContext.EMPLOYEE_REPOSITORY);
         assertNotNull(ApplicationContext.MEMBER_REPOSITORY);
-        assertNotNull(ApplicationContext.CUSTOMER_REPOSITORY);
         assertNotNull(ApplicationContext.PRODUCT_REPOSITORY);
         assertNotNull(ApplicationContext.STOCK_REPOSITORY);
         assertNotNull(ApplicationContext.TRANSACTION_REPOSITORY);
@@ -144,10 +130,6 @@ public class ApplicationContextTest {
             // Test ProductService
             var products = ApplicationContext.PRODUCT_SERVICE.findAll();
             assertNotNull("ProductService should return list", products);
-            
-            // Test CustomerService
-            var customers = ApplicationContext.CUSTOMER_SERVICE.findAll();
-            assertNotNull("CustomerService should return list", customers);
             
             // Test EmployeeRepository
             var employees = ApplicationContext.EMPLOYEE_REPOSITORY.findAll();
@@ -187,8 +169,6 @@ public class ApplicationContextTest {
                 ApplicationContext.EMPLOYEE_REPOSITORY.findAll());
         assertNotNull("Member findAll should not return null", 
                 ApplicationContext.MEMBER_REPOSITORY.findAll());
-        assertNotNull("Customer findAll should not return null", 
-                ApplicationContext.CUSTOMER_REPOSITORY.findAll());
         assertNotNull("Product findAll should not return null", 
                 ApplicationContext.PRODUCT_REPOSITORY.findAll());
     }

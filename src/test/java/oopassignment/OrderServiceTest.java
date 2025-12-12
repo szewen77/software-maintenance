@@ -50,7 +50,7 @@ public class OrderServiceTest {
     @Test
     public void memberDiscountApplied() {
         OrderItemRequest item = new OrderItemRequest("P001", "M", 2);
-        OrderRequest request = new OrderRequest("MB001", null, List.of(item), "CASH");
+        OrderRequest request = new OrderRequest("MB001", List.of(item), "CASH");
         OrderResult result = orderService.placeOrder(request);
 
         double expectedSubtotal = 19.90 * 2;
@@ -64,7 +64,7 @@ public class OrderServiceTest {
     @Test
     public void nonMemberPurchaseHasNoDiscount() {
         OrderItemRequest item = new OrderItemRequest("P001", "M", 1);
-        OrderRequest request = new OrderRequest(null, "CU002", List.of(item), "CARD");
+        OrderRequest request = new OrderRequest(null, List.of(item), "CARD");
         OrderResult result = orderService.placeOrder(request);
 
         assertFalse("No discount for non-member", result.isMemberDiscountApplied());
@@ -74,7 +74,7 @@ public class OrderServiceTest {
     @Test
     public void insufficientStockThrows() {
         OrderItemRequest item = new OrderItemRequest("P001", "M", 1000);
-        OrderRequest request = new OrderRequest(null, "CU003", List.of(item), "CASH");
+        OrderRequest request = new OrderRequest(null, List.of(item), "CASH");
         assertThrows("Should fail when stock is insufficient",
                 InsufficientStockException.class,
                 () -> orderService.placeOrder(request));
@@ -84,7 +84,7 @@ public class OrderServiceTest {
     public void mixedItemsTotalMatches() {
         OrderItemRequest item1 = new OrderItemRequest("P001", "M", 1);
         OrderItemRequest item2 = new OrderItemRequest("P002", "42", 1);
-        OrderRequest request = new OrderRequest(null, "CU004", List.of(item1, item2), "CASH");
+        OrderRequest request = new OrderRequest(null, List.of(item1, item2), "CASH");
         OrderResult result = orderService.placeOrder(request);
 
         double expectedTotal = 19.90 + 120.00;
@@ -93,7 +93,7 @@ public class OrderServiceTest {
 
     @Test
     public void emptyOrderRejected() {
-        OrderRequest empty = new OrderRequest(null, null, List.of(), "CASH");
+        OrderRequest empty = new OrderRequest(null, List.of(), "CASH");
         assertThrows("Empty orders should be rejected",
                 InvalidInputException.class,
                 () -> orderService.placeOrder(empty));
@@ -103,7 +103,7 @@ public class OrderServiceTest {
     public void walletPaymentDeductsBalance() {
         MemberRecord member = memberService.registerMember("Wallet User", "950101-01-1234", 100.0);
         OrderItemRequest item = new OrderItemRequest("P001", "M", 1);
-        OrderRequest request = new OrderRequest(member.getMemberId(), "CU-WALLET", List.of(item), "WALLET");
+        OrderRequest request = new OrderRequest(member.getMemberId(), List.of(item), "WALLET");
         
         OrderResult result = orderService.placeOrder(request);
         
@@ -117,7 +117,7 @@ public class OrderServiceTest {
     public void walletPaymentWithInsufficientBalanceThrows() {
         MemberRecord member = memberService.registerMember("Poor User", "960202-02-5678", 5.0);
         OrderItemRequest item = new OrderItemRequest("P001", "M", 1);
-        OrderRequest request = new OrderRequest(member.getMemberId(), "CU-WALLET", List.of(item), "WALLET");
+        OrderRequest request = new OrderRequest(member.getMemberId(), List.of(item), "WALLET");
         
         assertThrows("Should reject wallet payment with insufficient balance",
                 InvalidInputException.class,
@@ -127,7 +127,7 @@ public class OrderServiceTest {
     @Test
     public void walletPaymentForNonMemberThrows() {
         OrderItemRequest item = new OrderItemRequest("P001", "M", 1);
-        OrderRequest request = new OrderRequest(null, "CU-NOMEMBER", List.of(item), "WALLET");
+        OrderRequest request = new OrderRequest(null, List.of(item), "WALLET");
         
         assertThrows("Should reject wallet payment for non-members",
                 InvalidInputException.class,
@@ -137,7 +137,7 @@ public class OrderServiceTest {
     @Test
     public void walletPaymentWithInvalidMemberThrows() {
         OrderItemRequest item = new OrderItemRequest("P001", "M", 1);
-        OrderRequest request = new OrderRequest("MB999", "CU-INVALID", List.of(item), "WALLET");
+        OrderRequest request = new OrderRequest("MB999", List.of(item), "WALLET");
         
         assertThrows("Should reject wallet payment with invalid member",
                 EntityNotFoundException.class,
@@ -149,7 +149,7 @@ public class OrderServiceTest {
         MemberRecord member = memberService.registerMember("Big Spender", "970303-03-9876", 200.0);
         OrderItemRequest item1 = new OrderItemRequest("P001", "M", 2);
         OrderItemRequest item2 = new OrderItemRequest("P002", "42", 1);
-        OrderRequest request = new OrderRequest(member.getMemberId(), "CU-BIG", List.of(item1, item2), "WALLET");
+        OrderRequest request = new OrderRequest(member.getMemberId(), List.of(item1, item2), "WALLET");
         
         OrderResult result = orderService.placeOrder(request);
         

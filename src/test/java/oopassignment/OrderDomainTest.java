@@ -39,10 +39,10 @@ public class OrderDomainTest {
         List<OrderItemRequest> items = new ArrayList<>();
         items.add(new OrderItemRequest("P001", "M", 1));
         
-        OrderRequest request = new OrderRequest("MB001", "CU001", items, "CASH");
+        OrderRequest request = new OrderRequest("MB001", items, "CASH");
         
         assertEquals("MB001", request.getMemberId());
-        assertEquals("CU001", request.getCustomerId());
+        assertEquals("MEMBER", request.getCustomerType());
         assertEquals(1, request.getItems().size());
         assertEquals("CASH", request.getPaymentMethod());
     }
@@ -52,10 +52,10 @@ public class OrderDomainTest {
         List<OrderItemRequest> items = new ArrayList<>();
         items.add(new OrderItemRequest("P001", "M", 1));
         
-        OrderRequest request = new OrderRequest(null, "CU002", items, "CARD");
+        OrderRequest request = new OrderRequest(null, items, "CARD");
         
         assertNull("Member ID should be null", request.getMemberId());
-        assertEquals("CU002", request.getCustomerId());
+        assertEquals("WALK-IN", request.getCustomerType());
         assertEquals("CARD", request.getPaymentMethod());
     }
 
@@ -66,7 +66,7 @@ public class OrderDomainTest {
         items.add(new OrderItemRequest("P002", "42", 1));
         items.add(new OrderItemRequest("P001", "L", 3));
         
-        OrderRequest request = new OrderRequest("MB002", "CU003", items, "WALLET");
+        OrderRequest request = new OrderRequest("MB002", items, "WALLET");
         
         assertEquals(3, request.getItems().size());
         assertEquals("WALLET", request.getPaymentMethod());
@@ -77,9 +77,10 @@ public class OrderDomainTest {
         List<OrderItemRequest> items = new ArrayList<>();
         items.add(new OrderItemRequest("P001", "M", 1));
         
-        OrderRequest request = new OrderRequest("", "CU004", items, "CASH");
+        OrderRequest request = new OrderRequest("", items, "CASH");
         
         assertEquals("", request.getMemberId());
+        assertEquals("WALK-IN", request.getCustomerType());
     }
 
     @Test
@@ -124,7 +125,7 @@ public class OrderDomainTest {
     @Test
     public void orderRequestWithCashPayment() {
         List<OrderItemRequest> items = List.of(new OrderItemRequest("P001", "M", 1));
-        OrderRequest request = new OrderRequest("MB003", "CU005", items, "CASH");
+        OrderRequest request = new OrderRequest("MB003", items, "CASH");
         
         assertEquals("CASH", request.getPaymentMethod());
     }
@@ -132,7 +133,7 @@ public class OrderDomainTest {
     @Test
     public void orderRequestWithCardPayment() {
         List<OrderItemRequest> items = List.of(new OrderItemRequest("P001", "M", 1));
-        OrderRequest request = new OrderRequest("MB004", "CU006", items, "CARD");
+        OrderRequest request = new OrderRequest("MB004", items, "CARD");
         
         assertEquals("CARD", request.getPaymentMethod());
     }
@@ -140,7 +141,7 @@ public class OrderDomainTest {
     @Test
     public void orderRequestWithWalletPayment() {
         List<OrderItemRequest> items = List.of(new OrderItemRequest("P001", "M", 1));
-        OrderRequest request = new OrderRequest("MB005", "CU007", items, "WALLET");
+        OrderRequest request = new OrderRequest("MB005", items, "WALLET");
         
         assertEquals("WALLET", request.getPaymentMethod());
     }
@@ -171,10 +172,10 @@ public class OrderDomainTest {
         List<OrderItemRequest> items = new ArrayList<>();
         items.add(new OrderItemRequest("P001", "M", 2));
         
-        OrderRequest request = new OrderRequest("MB006", "CU008", items, "CASH");
+        OrderRequest request = new OrderRequest("MB006", items, "CASH");
         
         assertNotNull(request.getMemberId());
-        assertNotNull(request.getCustomerId());
+        assertNotNull(request.getCustomerType());
         assertNotNull(request.getItems());
         assertNotNull(request.getPaymentMethod());
         assertFalse(request.getItems().isEmpty());
@@ -193,7 +194,7 @@ public class OrderDomainTest {
     @Test
     public void orderRequestWithNullItems() {
         // Test line 15: items == null ? new ArrayList<>() : new ArrayList<>(items)
-        OrderRequest request = new OrderRequest("MB007", "CU009", null, "CASH");
+        OrderRequest request = new OrderRequest("MB007", null, "CASH");
         
         assertNotNull("Items should not be null", request.getItems());
         assertTrue("Items should be empty list", request.getItems().isEmpty());
@@ -204,7 +205,7 @@ public class OrderDomainTest {
     public void orderRequestWithNullPaymentMethod() {
         // Test line 16: paymentMethod == null ? "CASH" : paymentMethod
         List<OrderItemRequest> items = List.of(new OrderItemRequest("P001", "M", 1));
-        OrderRequest request = new OrderRequest("MB008", "CU010", items, null);
+        OrderRequest request = new OrderRequest("MB008", items, null);
         
         assertEquals("CASH", request.getPaymentMethod());
     }
@@ -215,7 +216,7 @@ public class OrderDomainTest {
         List<OrderItemRequest> items = new ArrayList<>();
         items.add(new OrderItemRequest("P001", "M", 1));
         
-        OrderRequest request = new OrderRequest("MB009", "CU011", items, "CASH");
+        OrderRequest request = new OrderRequest("MB009", items, "CASH");
         List<OrderItemRequest> returnedItems = request.getItems();
         
         // Modify the returned list
@@ -228,7 +229,7 @@ public class OrderDomainTest {
     @Test
     public void orderRequestWithNullItemsAndPaymentMethod() {
         // Test both null branches together
-        OrderRequest request = new OrderRequest("MB010", "CU012", null, null);
+        OrderRequest request = new OrderRequest("MB010", null, null);
         
         assertNotNull(request.getItems());
         assertTrue(request.getItems().isEmpty());
@@ -238,7 +239,7 @@ public class OrderDomainTest {
     @Test
     public void orderRequestWithEmptyItemsList() {
         List<OrderItemRequest> emptyItems = new ArrayList<>();
-        OrderRequest request = new OrderRequest("MB011", "CU013", emptyItems, "CARD");
+        OrderRequest request = new OrderRequest("MB011", emptyItems, "CARD");
         
         assertEquals(0, request.getItems().size());
         assertTrue(request.getItems().isEmpty());

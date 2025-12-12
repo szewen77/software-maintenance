@@ -7,7 +7,6 @@ import java.util.List;
 import oopassignment.domain.auth.EmployeeRecord;
 import oopassignment.domain.auth.EmploymentStatus;
 import oopassignment.domain.auth.Role;
-import oopassignment.domain.member.CustomerRecord;
 import oopassignment.domain.member.MemberRecord;
 import oopassignment.domain.member.MemberStatus;
 import oopassignment.domain.order.OrderItemRequest;
@@ -118,28 +117,6 @@ public class DomainRecordsTest {
         assertEquals(MemberStatus.INACTIVE, member.getStatus());
     }
 
-    @Test
-    public void customerRecordCreation() {
-        CustomerRecord customer = new CustomerRecord("CU001", "Alice", 
-                LocalDate.now(), null);
-        
-        assertEquals("CU001", customer.getCustomerId());
-        assertEquals("Alice", customer.getName());
-        assertNotNull(customer.getRegisteredDate());
-    }
-
-    @Test
-    public void customerRecordSetters() {
-        CustomerRecord customer = new CustomerRecord("CU002", "Bob", 
-                LocalDate.now(), null);
-        
-        LocalDate purchaseDate = LocalDate.now().minusDays(5);
-        customer.setLastPurchaseDate(purchaseDate);
-        customer.setName("Robert");
-        
-        assertEquals("Robert", customer.getName());
-        assertEquals(purchaseDate, customer.getLastPurchaseDate());
-    }
 
     @Test
     public void productRecordCreation() {
@@ -273,11 +250,11 @@ public class DomainRecordsTest {
     @Test
     public void transactionHeaderCreation() {
         TransactionHeader header = new TransactionHeader("T001", LocalDateTime.now(), 
-                "MB001", "CU001", 95.0, "CASH");
+                "MB001", "MEMBER", 95.0, "CASH");
         
         assertEquals("T001", header.getTransactionId());
         assertEquals("MB001", header.getMemberId());
-        assertEquals("CU001", header.getCustomerId());
+        assertEquals("MEMBER", header.getCustomerType());
         assertEquals(95.0, header.getTotalAmount(), 0.001);
         assertEquals("CASH", header.getPaymentMethod());
     }
@@ -308,10 +285,10 @@ public class DomainRecordsTest {
         List<OrderItemRequest> items = new ArrayList<>();
         items.add(new OrderItemRequest("P001", "M", 1));
         
-        OrderRequest request = new OrderRequest("MB001", "CU001", items, "CARD");
+        OrderRequest request = new OrderRequest("MB001", items, "CARD");
         
         assertEquals("MB001", request.getMemberId());
-        assertEquals("CU001", request.getCustomerId());
+        assertEquals("MEMBER", request.getCustomerType());
         assertEquals(1, request.getItems().size());
         assertEquals("CARD", request.getPaymentMethod());
     }

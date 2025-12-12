@@ -71,7 +71,7 @@ public class ConfigTest {
 
     @Test
     public void appConfigSchemaVersionExactValue() {
-        assertEquals(1, AppConfig.SCHEMA_VERSION);
+        assertEquals(2, AppConfig.SCHEMA_VERSION);
     }
 
     @Test
@@ -129,7 +129,7 @@ public class ConfigTest {
     @Test
     public void databaseAllTablesExist() throws Exception {
         if (Database.isAvailable()) {
-            String[] tables = {"employee", "member", "customer", "product", "stock", 
+            String[] tables = {"employee", "member", "product", "stock", 
                               "transaction_header", "transaction_item"};
             
             try (Connection conn = Database.getConnection();
@@ -279,18 +279,6 @@ public class ConfigTest {
     }
 
     @Test
-    public void databaseCustomerTableExists() throws Exception {
-        if (Database.isAvailable()) {
-            try (Connection conn = Database.getConnection();
-                 Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='customer'")) {
-                
-                assertTrue("Customer table should exist", rs.next());
-            }
-        }
-    }
-
-    @Test
     public void databaseProductTableExists() throws Exception {
         if (Database.isAvailable()) {
             try (Connection conn = Database.getConnection();
@@ -377,19 +365,6 @@ public class ConfigTest {
                 assertTrue("Member should be seeded", rs.next());
                 assertEquals("Member name should be 'Alex Member'", "Alex Member", rs.getString("name"));
                 assertEquals(100.0, rs.getDouble("credit_balance"), 0.001);
-            }
-        }
-    }
-
-    @Test
-    public void databaseSeededCustomerExists() throws Exception {
-        if (Database.isAvailable()) {
-            try (Connection conn = Database.getConnection();
-                 Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT * FROM customer WHERE customer_id='CU001'")) {
-                
-                assertTrue("Customer should be seeded", rs.next());
-                assertEquals("Customer name should be 'Walk-in'", "Walk-in", rs.getString("name"));
             }
         }
     }
