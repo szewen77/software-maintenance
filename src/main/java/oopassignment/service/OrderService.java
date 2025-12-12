@@ -23,12 +23,13 @@ import org.slf4j.LoggerFactory;
 
 public class OrderService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OrderService.class);
     private final ProductRepository productRepository;
     private final InventoryService inventoryService;
     private final PricingService pricingService;
     private final TransactionRepository transactionRepository;
     private final MemberRepository memberRepository;
+    private static final Logger LOG = LoggerFactory.getLogger(OrderService.class);
+
 
     public OrderService(ProductRepository productRepository,
                         InventoryService inventoryService,
